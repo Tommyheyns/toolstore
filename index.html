@@ -336,7 +336,12 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <div class="settings-section">
     <div class="settings-title">Export</div>
     <button class="settings-btn" onclick="exportCSV()"><span class="settings-icon">📄</span> Download CSV</button>
-    <button class="settings-btn" onclick="copyJSON()"><span class="settings-icon">📋</span> Copy JSON</button>
+    <button class="settings-btn" onclick="copyJSON()"><span class="settings-icon">📋</span> Copy JSON (Backup)</button>
+    <button class="settings-btn" onclick="showRestore()"><span class="settings-icon">♻️</span> Restore from Backup</button>
+    <div id="restoreBox" style="display:none;margin-top:8px">
+      <textarea id="restoreInput" placeholder="Paste your JSON backup here…" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:DM Mono,monospace;font-size:12px;resize:none;outline:none;margin-bottom:8px"></textarea>
+      <button onclick="restoreFromJSON()" style="width:100%;padding:13px;border-radius:var(--radius);background:var(--accent);color:#000;font-family:Syne,sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer">✓ Restore Stock</button>
+    </div>
   </div>
   <div class="settings-section">
     <div class="settings-title">Danger Zone</div>
@@ -1149,6 +1154,30 @@ function exportCSV(){
 }
 function copyJSON(){if(!tools.length){showToast('No tools',true);return;}navigator.clipboard.writeText(JSON.stringify(tools,null,2)).then(()=>showToast('Copied')).catch(()=>showToast('Copy failed',true));}
 function clearAllData(){if(!confirm('Delete ALL inventory? Cannot be undone.'))return;tools=[];save('ts_tools',tools);updateCount();showToast('Cleared');}
+
+function showRestore(){
+  const box=document.getElementById('restoreBox');
+  box.style.display=box.style.display==='none'?'block':'none';
+}
+
+function restoreFromJSON(){
+  const raw=document.getElementById('restoreInput').value.trim();
+  if(!raw){showToast('Nothing to restore',true);return;}
+  try{
+    const parsed=JSON.parse(raw);
+    if(!Array.isArray(parsed)){showToast('Invalid backup format',true);return;}
+    if(!confirm(`Restore ${parsed.length} items? This will ADD to your current stock.`))return;
+    // Merge — avoid duplicates by id
+    const existingIds=new Set(tools.map(t=>t.id));
+    const newItems=parsed.filter(t=>!existingIds.has(t.id));
+    tools=[...tools,...newItems];
+    save('ts_tools',tools);
+    updateCount();
+    document.getElementById('restoreBox').style.display='none';
+    document.getElementById('restoreInput').value='';
+    showToast(`✓ Restored ${newItems.length} items`);
+  }catch(e){showToast('Invalid JSON — check your backup',true);}
+}
 
 // ── IN-STOCK MODAL ────────────────────────────────────────────────────────────
 let inStockMatchedTool = null;
