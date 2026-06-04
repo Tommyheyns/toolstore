@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tool Store">
+<title>Tool Store</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0f14;--surface:#161a22;--card:#1e2330;--border:#2a3040;--accent:#f0a500;--accent2:#3b82f6;--text:#e8ecf4;--muted:#6b7899;--warn:#ef4444;--green:#22c55e;--radius:14px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100dvh;overflow-x:hidden}
+header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:14px 20px 12px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px}
+.logo span{color:var(--accent)}
+.hdr-count{font-size:11px;color:var(--muted)}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:99}
+.tab{flex:1;padding:12px 4px;text-align:center;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .2s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.page{display:none;padding:16px 16px 120px}
+.page.active{display:block}
+
+/* HOME BUTTONS */
+.home-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.home-btn{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:22px 14px;text-align:center;cursor:pointer;transition:all .2s}
+.home-btn.active-mode{border-color:var(--accent);background:rgba(240,165,0,.08)}
+.home-btn:active{transform:scale(.97)}
+.home-btn-icon{font-size:36px;display:block;margin-bottom:8px}
+.home-btn-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text)}
+.home-btn-sub{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* SCAN */
+.scan-zone{background:var(--surface);border:2px dashed var(--border);border-radius:var(--radius);padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative;overflow:hidden}
+.scan-zone.has-image{border-style:solid;border-color:var(--accent);padding:0}
+.scan-icon{font-size:42px;margin-bottom:8px;display:block}
+.scan-label{font-size:13px;color:var(--muted)}
+.scan-label strong{color:var(--text);display:block;font-size:15px;margin-bottom:4px}
+#previewImg{width:100%;max-height:220px;object-fit:cover;border-radius:calc(var(--radius) - 2px);display:none}
+#fileInput{display:none}
+.scan-btn{width:100%;margin-top:12px;padding:15px;border-radius:var(--radius);background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;border:none;cursor:pointer;transition:opacity .2s,transform .1s}
+.scan-btn:active{transform:scale(.98);opacity:.85}
+.scan-btn:disabled{background:var(--border);color:var(--muted);cursor:default}
+.thinking{display:none;text-align:center;padding:24px 0}
+.thinking.show{display:block}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.thinking-msg{font-size:12px;color:var(--muted)}
+
+/* RESULT CARD */
+.result-card{display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:12px}
+.result-card.show{display:block}
+.result-header{background:var(--surface);padding:11px 15px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}
+.conf-badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:20px;font-family:'DM Mono',monospace}
+.conf-high{background:rgba(34,197,94,.15);color:var(--green)}
+.conf-med{background:rgba(240,165,0,.15);color:var(--accent)}
+.conf-low{background:rgba(239,68,68,.15);color:var(--warn)}
+.field-group{padding:12px 15px;display:flex;flex-direction:column;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.field input,.field select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7899' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.new-brand-row{display:none;margin-top:6px}
+.new-brand-row input{background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none}
+
+/* LOCATION ROW */
+.loc-section{padding:0 15px 12px}
+.loc-section-label{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.loc-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.loc-field{display:flex;flex-direction:column;gap:4px}
+.loc-field-label{font-size:9px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.loc-sel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--accent2);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;-webkit-appearance:none;min-width:0}
+.loc-sel:focus{border-color:var(--accent2)}
+
+/* SUBMIT */
+.submit-choices{padding:0 15px 14px;display:flex;gap:8px}
+.btn-add{flex:1;padding:13px;border-radius:var(--radius);background:var(--green);color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn-adj-here{flex:1;padding:13px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn-add:active,.btn-adj-here:active{transform:scale(.97);opacity:.85}
+.btn-clear{padding:13px 13px;border-radius:var(--radius);background:var(--surface);color:var(--muted);font-family:'DM Mono',monospace;font-size:13px;border:1px solid var(--border);cursor:pointer}
+
+/* ADJUST */
+.adjust-card{display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:12px}
+.adjust-card.show{display:block}
+.adj-header{background:var(--surface);padding:11px 15px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent2)}
+.adj-match{padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+.adj-item{background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:12px 13px;cursor:pointer;transition:border-color .2s}
+.adj-item.selected{border-color:var(--accent2);background:rgba(59,130,246,.07)}
+.adj-item:active{border-color:var(--accent2)}
+.adj-pn{font-size:13px;font-weight:500}
+.adj-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.adj-loc{font-size:11px;color:var(--accent2);margin-top:3px}
+.adj-no-match{text-align:center;padding:20px 14px;color:var(--muted);font-size:13px;line-height:1.7}
+.qty-adjuster{padding:8px 15px 4px;display:flex;align-items:center}
+.adj-btn{width:56px;height:56px;border:none;border-radius:10px;font-size:30px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif}
+.adj-btn.minus{background:rgba(239,68,68,.15);color:var(--warn)}
+.adj-btn.plus{background:rgba(34,197,94,.15);color:var(--green)}
+.adj-btn:active{transform:scale(.9)}
+.adj-count{flex:1;text-align:center;font-family:'Syne',sans-serif;font-size:34px;font-weight:800}
+.adj-count small{font-size:11px;color:var(--muted);display:block;font-family:'DM Mono',monospace;font-weight:400;margin-top:2px}
+.adj-change-desc{text-align:center;font-size:11px;padding:2px 15px 8px}
+.btn-confirm{margin:0 14px 14px;display:block;width:calc(100% - 28px);padding:14px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer}
+.btn-confirm:active{opacity:.85}
+
+/* INVENTORY */
+.inv-toolbar{display:flex;gap:8px;margin-bottom:12px}
+.search-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none}
+.search-box:focus{border-color:var(--accent)}
+.cat-filter{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 8px;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;outline:none;-webkit-appearance:none}
+.inv-group{margin-bottom:18px}
+.inv-group-title{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+.inv-group-count{background:var(--surface);border-radius:10px;padding:2px 7px;font-size:9px}
+.inv-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 12px;margin-bottom:7px;display:flex;align-items:center;gap:9px}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.inv-main{flex:1;min-width:0}
+.inv-pn{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.inv-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.inv-loc{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--accent2);background:rgba(59,130,246,.1);padding:2px 7px;border-radius:6px;white-space:nowrap}
+.inv-qty{font-size:11px;color:var(--muted)}
+.inv-edit-btn{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;flex-shrink:0}
+.inv-edit-btn:active{border-color:var(--accent);color:var(--accent)}
+
+/* STORAGE TAB */
+.storage-header{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.storage-select{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;-webkit-appearance:none;flex:1}
+.storage-grid{display:grid;gap:5px}
+.storage-cell{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 10px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .2s}
+.storage-cell.has-stock{border-color:var(--accent2)}
+.storage-cell:active{transform:scale(.98)}
+.sc-num{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--muted);min-width:44px;text-align:center}
+.sc-num.has-s{color:var(--accent2)}
+.sc-main{flex:1;min-width:0}
+.sc-preview{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-qty{font-size:11px;color:var(--green);margin-top:2px}
+/* bin grid mode */
+.bin-grid-wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.bin-cell{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 5px;text-align:center;cursor:pointer;min-height:68px;display:flex;flex-direction:column;justify-content:center;gap:2px;transition:border-color .2s}
+.bin-cell.has-stock{border-color:var(--accent2);background:rgba(59,130,246,.05)}
+.bin-cell.spare{opacity:.35}
+.bin-cell:active{transform:scale(.95)}
+.bc-num{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;color:var(--muted)}
+.bc-items{font-size:9px;color:var(--text);line-height:1.4}
+.bc-qty{font-size:9px;color:var(--green);font-weight:600}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;backdrop-filter:blur(4px)}
+.modal-bg.show{display:flex;align-items:flex-end}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;padding:20px 18px 48px;border:1px solid var(--border);border-bottom:none;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1);max-height:88vh;overflow-y:auto}
+.modal-bg.show .modal{transform:translateY(0)}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:3px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+.modal-close{width:100%;margin-top:12px;padding:13px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer}
+.bin-section-hdr{font-size:10px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin:12px 0 6px}
+.bin-tool-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 13px;margin-bottom:7px;display:flex;align-items:center;gap:10px}
+.bti-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.bti-main{flex:1;min-width:0}
+.bti-pn{font-size:13px;font-weight:500}
+.bti-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.bti-tag{font-size:10px;color:var(--accent2);background:rgba(59,130,246,.1);padding:2px 6px;border-radius:5px;margin-top:3px;display:inline-block}
+.bti-right{text-align:right;flex-shrink:0}
+.bti-qty{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}
+.bti-pcs{font-size:10px;color:var(--muted)}
+
+/* EDIT MODAL */
+.edit-field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.edit-field label{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.edit-field input,.edit-field select{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;-webkit-appearance:none}
+.edit-field input:focus,.edit-field select:focus{border-color:var(--accent)}
+.edit-save{width:100%;padding:14px;border-radius:var(--radius);background:var(--green);color:#000;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer;margin-top:4px}
+.edit-delete{width:100%;padding:12px;border-radius:var(--radius);background:rgba(239,68,68,.1);color:var(--warn);font-family:'DM Mono',monospace;font-size:13px;border:1px solid rgba(239,68,68,.2);cursor:pointer;margin-top:8px}
+
+/* SETTINGS */
+.settings-section{margin-bottom:22px}
+.settings-title{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:9px}
+.settings-btn{width:100%;padding:12px 15px;border-radius:var(--radius);background:var(--card);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.settings-btn:active{border-color:var(--accent)}
+.settings-icon{font-size:17px}
+.settings-btn.danger{color:var(--warn)}
+
+/* STORAGE UNIT CARDS IN SETTINGS */
+.su-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.su-card-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.su-icon{font-size:22px}
+.su-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;flex:1}
+.su-type{font-size:10px;color:var(--muted);background:var(--surface);padding:2px 8px;border-radius:10px}
+.su-detail{font-size:11px;color:var(--muted)}
+.su-actions{display:flex;gap:7px;margin-top:10px}
+.su-btn{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer}
+.su-btn.del{color:var(--warn);border-color:rgba(239,68,68,.3)}
+.su-btn:active{border-color:var(--accent)}
+
+/* TYPE SELECTOR */
+.type-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.type-btn{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer;transition:all .2s}
+.type-btn.selected{border-color:var(--accent);background:rgba(240,165,0,.08)}
+.type-btn:active{transform:scale(.97)}
+.type-btn-icon{font-size:24px;display:block;margin-bottom:4px}
+.type-btn-name{font-size:11px;font-family:'Syne',sans-serif;font-weight:700}
+
+.toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#000;padding:11px 20px;border-radius:30px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:var(--warn);color:#fff}
+.safe-pad{height:env(safe-area-inset-bottom,20px)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">TOOL<span>STORE</span></div>
+  <div class="hdr-count" id="hdrCount">—</div>
+</header>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('scan')">📷 Scan</button>
+  <button class="tab" onclick="switchTab('inventory')">📋 Stock</button>
+  <button class="tab" onclick="switchTab('storage')">🗄️ Storage</button>
+  <button class="tab" onclick="switchTab('settings')">⚙️ Settings</button>
+</div>
+
+<!-- ══ SCAN ══ -->
+<div class="page active" id="page-scan">
+  <div class="home-btns">
+    <div class="home-btn active-mode" id="modeAddBtn" onclick="setMode('add')">
+      <span class="home-btn-icon">➕</span>
+      <div class="home-btn-name">Add Stock</div>
+      <div class="home-btn-sub">Scan new item</div>
+    </div>
+    <div class="home-btn" id="modeAdjBtn" onclick="setMode('adjust')">
+      <span class="home-btn-icon">↕️</span>
+      <div class="home-btn-name">Adjust Stock</div>
+      <div class="home-btn-sub">Add or remove pcs</div>
+    </div>
+  </div>
+  <div class="scan-zone" id="scanZone" onclick="document.getElementById('fileInput').click()">
+    <span class="scan-icon">📦</span>
+    <div class="scan-label"><strong id="scanPrompt">Tap to photograph label</strong><span id="scanHint">Point camera at packaging</span></div>
+    <img id="previewImg" alt="">
+  </div>
+  <input type="file" id="fileInput" accept="image/*" capture="environment">
+  <button class="scan-btn" id="analyseBtn" onclick="doScan()" disabled>Read Label with AI →</button>
+  <div class="thinking" id="thinking">
+    <div class="spinner"></div>
+    <div class="thinking-msg" id="thinkingMsg">Reading label…</div>
+  </div>
+
+  <!-- ADD result -->
+  <div class="result-card" id="resultCard">
+    <div class="result-header">AI Reading <span class="conf-badge" id="confBadge"></span></div>
+    <div style="padding:8px 15px 4px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Category (tap to change)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px" id="catTagRow"></div>
+    </div>
+    <div class="field-group">
+      <div class="field"><label>Brand</label><select id="fBrand" onchange="handleBrandChange()"></select><div class="new-brand-row" id="newBrandRow"><input type="text" id="newBrandInput" placeholder="Type brand name…" oninput="saveNewBrand()"></div></div>
+      <div class="field"><label>Part Number</label><input type="text" id="fPart" placeholder="e.g. SPGX11T3-C1"></div>
+      <div id="catFields"></div>
+      <div class="field-row">
+        <div class="field"><label>Grade / Coating</label><input type="text" id="fGrade" placeholder="e.g. T400D"></div>
+        <div class="field"><label>Qty (pcs)</label><input type="number" id="fQty" value="1" min="1"></div>
+      </div>
+      <div class="field"><label>Notes</label><input type="text" id="fNotes" placeholder="EDP, lot, barcode…"></div>
+    </div>
+    <!-- Dynamic location picker -->
+    <div class="loc-section">
+      <div class="loc-section-label">Location</div>
+      <div class="loc-row" id="locRow"></div>
+    </div>
+    <div class="submit-choices">
+      <button class="btn-add" onclick="submitTool()">➕ Add Stock</button>
+      <button class="btn-adj-here" onclick="switchToAdjustFromResult()">↕ Adjust</button>
+      <button class="btn-clear" onclick="clearScan()">✕</button>
+    </div>
+  </div>
+
+  <!-- ADJUST result -->
+  <div class="adjust-card" id="adjustCard">
+    <div class="adj-header" id="adjHeader">Matching Items in Stock</div>
+    <div class="adj-match" id="adjMatches"></div>
+    <div id="adjQtySection" style="display:none">
+      <div style="padding:8px 15px 4px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Adjust Quantity</div>
+      <div class="qty-adjuster">
+        <button class="adj-btn minus" onclick="adjChange(-1)">−</button>
+        <div class="adj-count"><span id="adjNewQty">0</span><small>new qty</small></div>
+        <button class="adj-btn plus" onclick="adjChange(+1)">+</button>
+      </div>
+      <div class="adj-change-desc" id="adjChangeDesc"></div>
+      <button class="btn-confirm" onclick="confirmAdj()">✓ Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STOCK ══ -->
+<div class="page" id="page-inventory">
+  <div class="inv-toolbar">
+    <input class="search-box" id="searchBox" type="search" placeholder="Search part, brand, size…" oninput="renderInventory()">
+    <select class="cat-filter" id="invCatFilter" onchange="renderInventory()">
+      <option value="">All</option>
+      <option value="drill">🔵 Drill</option>
+      <option value="milling">🟡 Mill</option>
+      <option value="turning">🟠 Turn</option>
+      <option value="taps">🟢 Taps</option>
+      <option value="endmill">🔴 EM</option>
+      <option value="other">⚪ Other</option>
+    </select>
+  </div>
+  <div id="invList"></div>
+</div>
+
+<!-- ══ STORAGE ══ -->
+<div class="page" id="page-storage">
+  <div class="storage-header">
+    <select class="storage-select" id="storageUnitSelect" onchange="renderStorageView()"></select>
+  </div>
+  <div id="storageView"></div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div class="page" id="page-settings">
+  <div class="settings-section">
+    <div class="settings-title">Storage Units</div>
+    <div id="storageUnitList"></div>
+    <button class="settings-btn" onclick="openAddStorageModal()"><span class="settings-icon">➕</span> Add Storage Unit</button>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">API</div>
+    <button class="settings-btn" onclick="resetApiKey()"><span class="settings-icon">🔑</span> Reset OpenAI API Key</button>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">Custom Brands</div>
+    <div id="brandList"></div>
+    <button class="settings-btn" onclick="addBrandPrompt()"><span class="settings-icon">➕</span> Add Custom Brand</button>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">Export</div>
+    <button class="settings-btn" onclick="exportCSV()"><span class="settings-icon">📄</span> Download CSV</button>
+    <button class="settings-btn" onclick="copyJSON()"><span class="settings-icon">📋</span> Copy JSON</button>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">Danger Zone</div>
+    <button class="settings-btn danger" onclick="clearAllData()"><span class="settings-icon">🗑️</span> Clear All Inventory</button>
+  </div>
+</div>
+
+<!-- Location detail modal -->
+<div class="modal-bg" id="modalBg" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div id="modalItems"></div>
+    <button class="modal-close" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<!-- Add storage modal -->
+<div class="modal-bg" id="addStorageModalBg" onclick="closeAddStorageModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="addStorageTitle">Add Storage Unit</div>
+    <input type="hidden" id="editStorageId">
+    <div class="edit-field"><label>Name</label><input type="text" id="suName" placeholder="e.g. Parts Cabinet, Wall Rack, Tool Chest"></div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Type</div>
+      <div class="type-grid">
+        <div class="type-btn selected" id="type-bins" onclick="selectStorageType('bins')"><span class="type-btn-icon">🗄️</span><div class="type-btn-name">Bins</div></div>
+        <div class="type-btn" id="type-shelves" onclick="selectStorageType('shelves')"><span class="type-btn-icon">📚</span><div class="type-btn-name">Shelves</div></div>
+        <div class="type-btn" id="type-drawers" onclick="selectStorageType('drawers')"><span class="type-btn-icon">🗃️</span><div class="type-btn-name">Drawers</div></div>
+      </div>
+    </div>
+    <div class="edit-field"><label id="suCountLabel">Number of Bins</label><input type="number" id="suCount" value="48" min="1" max="200"></div>
+    <div id="suSectionRow" class="edit-field">
+      <label>Sections per Bin</label>
+      <select id="suSections"><option value="1">None (no sections)</option><option value="2" selected>A + B</option><option value="3">A + B + C</option></select>
+    </div>
+    <div class="edit-field"><label>Description (optional)</label><input type="text" id="suDesc" placeholder="e.g. 48-bin PTB cabinet, drill inserts"></div>
+    <button class="edit-save" onclick="saveStorageUnit()">✓ Save</button>
+    <button class="modal-close" onclick="closeAddStorageModal()" style="margin-top:8px">Cancel</button>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-bg" id="editModalBg" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit Tool</div>
+    <input type="hidden" id="editToolId">
+    <div class="edit-field"><label>Brand</label><select id="eBrand" onchange="handleEditBrandChange()"></select><div class="new-brand-row" id="eNewBrandRow"><input type="text" id="eNewBrandInput" placeholder="Type brand name…"></div></div>
+    <div class="edit-field"><label>Part Number</label><input type="text" id="ePart"></div>
+    <div class="edit-field"><label>Size / Diameter</label><input type="text" id="eDiam"></div>
+    <div class="edit-field"><label>Grade / Coating</label><input type="text" id="eGrade"></div>
+    <div class="edit-field"><label>Quantity (pcs)</label><input type="number" id="eQty" min="0"></div>
+    <div class="edit-field"><label>Location</label><div id="editLocRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div></div>
+    <div class="edit-field"><label>Notes</label><input type="text" id="eNotes"></div>
+    <button class="edit-save" onclick="saveEdit()">✓ Save Changes</button>
+    <button class="edit-delete" onclick="deleteToolFromEdit()">🗑 Delete This Item</button>
+    <button class="modal-close" onclick="closeEditModal()" style="margin-top:8px">Cancel</button>
+  </div>
+</div>
+
+<!-- Already in stock modal -->
+<div class="modal-bg" id="inStockModalBg">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px">⚠️ Already in Stock</div>
+    <div id="inStockDetails" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.7"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="goToAdjustFromInStock()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">↕ Adjust Stock</button>
+      <button onclick="closeInStockModal()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;border:1px solid var(--border);cursor:pointer">OK</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="safe-pad"></div>
+
+<script>
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+const CAT_META={
+  drill:  {icon:'🔵',label:'Drill Inserts',  color:'#3b82f6'},
+  milling:{icon:'🟡',label:'Milling Inserts', color:'#eab308'},
+  turning:{icon:'🟠',label:'Turning Inserts', color:'#f97316'},
+  taps:   {icon:'🟢',label:'Taps',            color:'#22c55e'},
+  endmill:{icon:'🔴',label:'End Mills',       color:'#ef4444'},
+  other:  {icon:'⚪',label:'Other',           color:'#6b7899'},
+};
+const CAT_KEYS=Object.keys(CAT_META);
+const DEFAULT_BRANDS=['Gühring','ISCAR','SECO','Sandvik Coromant','Kennametal','Walter','Mitsubishi','Sumitomo','Kyocera'];
+const TYPE_META={
+  bins:   {icon:'🗄️',label:'Bins',    slotLabel:'Bin',     hasSection:true},
+  shelves:{icon:'📚',label:'Shelves', slotLabel:'Shelf',   hasSection:false},
+  drawers:{icon:'🗃️',label:'Drawers', slotLabel:'Drawer',  hasSection:false},
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentMode='add', currentCat='drill';
+let currentImgB64=null, currentImgType='image/jpeg';
+let adjSelectedId=null, adjCurrentQty=0, adjNewQty=0;
+let newStorageType='bins';
+
+function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+let tools=load('ts_tools',[]);
+let customBrands=load('ts_brands',[]);
+
+// Default storage units if none exist
+let storageUnits=load('ts_storage',[]);
+if(!storageUnits.length){
+  storageUnits=[
+    {id:'su1',name:'Cupboard 1',type:'bins',count:48,sections:3,desc:'48-bin PTB cabinet'},
+    {id:'su2',name:'Cupboard 2',type:'bins',count:48,sections:3,desc:''},
+    {id:'su3',name:'Cupboard 3',type:'shelves',count:6,sections:1,desc:''},
+  ];
+  save('ts_storage',storageUnits);
+}
+
+// Migrate old tool data
+tools=tools.map(t=>{
+  if(!t.storageId&&t.cupboard){t.storageId='su'+t.cupboard;}
+  return t;
+});
+
+// ── STORAGE HELPERS ───────────────────────────────────────────────────────────
+function getSU(id){return storageUnits.find(s=>s.id===id);}
+function locStr(t){
+  if(!t.storageId)return '';
+  const su=getSU(t.storageId);
+  if(!su)return '';
+  const tm=TYPE_META[su.type]||TYPE_META.bins;
+  const slot=t.bin?`${tm.slotLabel} ${t.bin}`:'';
+  const sec=su.type==='bins'&&t.section?` · ${t.section}`:'';
+  return `${su.name}${slot?' · '+slot:''}${sec}`;
+}
+
+// ── MODE ──────────────────────────────────────────────────────────────────────
+function setMode(mode){
+  currentMode=mode;
+  document.getElementById('modeAddBtn').classList.toggle('active-mode',mode==='add');
+  document.getElementById('modeAdjBtn').classList.toggle('active-mode',mode==='adjust');
+  const isAdj=mode==='adjust';
+  document.getElementById('scanPrompt').textContent=isAdj?'Scan box to find in stock':'Tap to photograph label';
+  document.getElementById('scanHint').textContent=isAdj?'AI will match to existing items':'Point camera at packaging';
+  document.getElementById('analyseBtn').textContent=isAdj?'Find in Stock →':'Read Label with AI →';
+  clearScan();
+}
+
+// ── CATEGORY ──────────────────────────────────────────────────────────────────
+function selectCat(cat){currentCat=cat;renderCatTags();renderCatFields();}
+function renderCatTags(){
+  const row=document.getElementById('catTagRow');if(!row)return;
+  row.innerHTML=CAT_KEYS.map(k=>{
+    const m=CAT_META[k],sel=k===currentCat;
+    return `<div onclick="selectCat('${k}')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid ${sel?m.color:'#2a3040'};background:${sel?m.color+'22':'transparent'};color:${sel?m.color:'#6b7899'}">${m.icon} ${m.label}</div>`;
+  }).join('');
+}
+function renderCatFields(){
+  const c=document.getElementById('catFields');if(!c)return;
+  if(currentCat==='drill'||currentCat==='milling'||currentCat==='turning'){
+    c.innerHTML=`<div class="field"><label>Size / Diameter</label><input type="text" id="fDiam" placeholder="${currentCat==='drill'?'e.g. Ø13.5mm':currentCat==='milling'?'e.g. SPGX11T3':'e.g. CNMG120408'}"></div><div class="field-row"><div class="field"><label>Insert Shape / Code</label><input type="text" id="fShape" placeholder="${currentCat==='milling'?'e.g. SPGX, RPHT':'e.g. CNMG, TNMG'}"></div><div class="field"><label>Corner Radius</label><input type="text" id="fCornerRadius" placeholder="e.g. R0.4, R0.8"></div></div>`;
+  }else if(currentCat==='taps'){
+    c.innerHTML=`<div class="field-row"><div class="field"><label>Thread Size</label><input type="text" id="fDiam" placeholder="e.g. M10"></div><div class="field"><label>Pitch</label><input type="text" id="fPitch" placeholder="e.g. 1.5"></div></div><div class="field"><label>Tap Type</label><select id="fTapType"><option>Machine Tap</option><option>Hand Tap</option><option>Spiral Flute</option><option>Spiral Point</option><option>Roll Form</option></select></div>`;
+  }else if(currentCat==='endmill'){
+    c.innerHTML=`<div class="field-row"><div class="field"><label>Diameter</label><input type="text" id="fDiam" placeholder="e.g. Ø12.0mm"></div><div class="field"><label>Flutes</label><input type="number" id="fFlutes" placeholder="4" min="1" max="12"></div></div><div class="field-row"><div class="field"><label>OAL Length</label><input type="text" id="fLength" placeholder="e.g. 75mm"></div><div class="field"><label>Corner Radius</label><input type="text" id="fCorner" placeholder="e.g. R0.5"></div></div>`;
+  }else{
+    c.innerHTML=`<div class="field"><label>Size / Diameter</label><input type="text" id="fDiam" placeholder="Size or diameter"></div>`;
+  }
+}
+
+// ── LOCATION PICKER ───────────────────────────────────────────────────────────
+function renderLocPicker(containerId, currentStorageId='', currentBin='', currentSection=''){
+  const container=document.getElementById(containerId);if(!container)return;
+  if(!storageUnits.length){container.innerHTML='<div style="font-size:12px;color:var(--muted)">No storage units — add one in Settings</div>';return;}
+
+  const suSel=`<div class="loc-field"><div class="loc-field-label">Storage</div><select class="loc-sel" id="${containerId}_su" onchange="updateLocPicker('${containerId}')" style="min-width:130px">
+    <option value="">— Select —</option>
+    ${storageUnits.map(s=>`<option value="${s.id}"${s.id===currentStorageId?' selected':''}>${TYPE_META[s.type]?.icon||'🗄️'} ${s.name}</option>`).join('')}
+  </select></div>`;
+
+  const su=getSU(currentStorageId);
+  let slotSel='',secSel='';
+  if(su){
+    const tm=TYPE_META[su.type]||TYPE_META.bins;
+    slotSel=`<div class="loc-field"><div class="loc-field-label">${tm.slotLabel}</div><input class="loc-sel" type="number" id="${containerId}_bin" min="1" max="${su.count}" placeholder="—" style="width:65px" value="${currentBin}"></div>`;
+    if(su.type==='bins'&&su.sections>1){
+      const opts=['','A','B'];
+      if(su.sections>=3)opts.push('C');
+      secSel=`<div class="loc-field"><div class="loc-field-label">Section</div><select class="loc-sel" id="${containerId}_sec" style="width:65px">
+        ${opts.map(o=>`<option value="${o}"${o===currentSection?' selected':''}>${o||'—'}</option>`).join('')}
+      </select></div>`;
+    }
+  }
+  container.innerHTML=suSel+slotSel+secSel;
+}
+
+function updateLocPicker(containerId){
+  const suId=document.getElementById(containerId+'_su')?.value||'';
+  renderLocPicker(containerId,suId,'','');
+}
+
+function getLocValues(containerId){
+  return{
+    storageId:document.getElementById(containerId+'_su')?.value||'',
+    bin:document.getElementById(containerId+'_bin')?.value||'',
+    section:document.getElementById(containerId+'_sec')?.value||'',
+  };
+}
+
+// ── BRANDS ────────────────────────────────────────────────────────────────────
+function allBrands(){return[...DEFAULT_BRANDS,...customBrands].filter((v,i,a)=>a.indexOf(v)===i)}
+function populateBrandSelect(elId,selected){
+  const sel=document.getElementById(elId);if(!sel)return;
+  const brands=allBrands();
+  sel.innerHTML=brands.map(b=>`<option${b===selected?' selected':''}>${b}</option>`).join('')+'<option>Other…</option>';
+  if(selected&&!brands.includes(selected))sel.innerHTML+=`<option selected>${selected}</option>`;
+}
+function handleBrandChange(){document.getElementById('newBrandRow').style.display=document.getElementById('fBrand').value==='Other…'?'block':'none';}
+function handleEditBrandChange(){document.getElementById('eNewBrandRow').style.display=document.getElementById('eBrand').value==='Other…'?'block':'none';}
+function saveNewBrand(){const v=document.getElementById('newBrandInput').value.trim();if(v&&!customBrands.includes(v)){customBrands.push(v);save('ts_brands',customBrands);}}
+function getBrand(selId,inputId){const v=document.getElementById(selId).value;if(v==='Other…'){const nb=(document.getElementById(inputId)||{}).value?.trim();if(nb)return nb;}return v;}
+function addBrandPrompt(){const n=prompt('Enter brand name:');if(n?.trim()&&!customBrands.includes(n.trim())){customBrands.push(n.trim());save('ts_brands',customBrands);renderBrandList();showToast('Brand added');}}
+function removeBrand(i){customBrands.splice(i,1);save('ts_brands',customBrands);renderBrandList();}
+function renderBrandList(){
+  const el=document.getElementById('brandList');if(!el)return;
+  if(!customBrands.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0">No custom brands yet</div>';return;}
+  el.innerHTML=customBrands.map((b,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:7px"><span style="flex:1;font-size:13px">${b}</span><button onclick="removeBrand(${i})" style="background:none;border:none;color:var(--warn);font-size:16px;cursor:pointer">✕</button></div>`).join('');
+}
+
+// ── STORAGE UNIT SETTINGS ─────────────────────────────────────────────────────
+function selectStorageType(type){
+  newStorageType=type;
+  ['bins','shelves','drawers'].forEach(t=>document.getElementById('type-'+t).classList.toggle('selected',t===type));
+  const tm=TYPE_META[type];
+  document.getElementById('suCountLabel').textContent=`Number of ${tm.label}`;
+  document.getElementById('suSectionRow').style.display=type==='bins'?'flex':'none';
+  document.getElementById('suCount').value=type==='bins'?48:type==='shelves'?6:8;
+}
+
+function openAddStorageModal(editId=null){
+  document.getElementById('addStorageTitle').textContent=editId?'Edit Storage Unit':'Add Storage Unit';
+  document.getElementById('editStorageId').value=editId||'';
+  if(editId){
+    const su=getSU(editId);if(!su)return;
+    document.getElementById('suName').value=su.name;
+    document.getElementById('suDesc').value=su.desc||'';
+    document.getElementById('suCount').value=su.count;
+    document.getElementById('suSections').value=su.sections||2;
+    selectStorageType(su.type);
+    newStorageType=su.type;
+  }else{
+    document.getElementById('suName').value='';
+    document.getElementById('suDesc').value='';
+    document.getElementById('suCount').value=48;
+    document.getElementById('suSections').value=2;
+    selectStorageType('bins');
+  }
+  document.getElementById('addStorageModalBg').classList.add('show');
+}
+
+function saveStorageUnit(){
+  const name=document.getElementById('suName').value.trim();
+  if(!name){showToast('Name required',true);return;}
+  const editId=document.getElementById('editStorageId').value;
+  const su={
+    id:editId||('su'+Date.now()),
+    name,type:newStorageType,
+    count:parseInt(document.getElementById('suCount').value)||10,
+    sections:parseInt(document.getElementById('suSections').value)||2,
+    desc:document.getElementById('suDesc').value.trim(),
+  };
+  if(editId){const idx=storageUnits.findIndex(s=>s.id===editId);if(idx>=0)storageUnits[idx]=su;else storageUnits.push(su);}
+  else storageUnits.push(su);
+  save('ts_storage',storageUnits);
+  closeAddStorageModal();
+  renderStorageUnitList();
+  populateStorageSelect();
+  showToast(editId?'Updated':'Storage unit added');
+}
+
+function deleteStorageUnit(id){
+  if(!confirm('Delete this storage unit? Tools assigned here will lose their location.'))return;
+  storageUnits=storageUnits.filter(s=>s.id!==id);
+  save('ts_storage',storageUnits);
+  renderStorageUnitList();
+  populateStorageSelect();
+  showToast('Deleted');
+}
+
+function closeAddStorageModal(e){if(!e||e.target===document.getElementById('addStorageModalBg'))document.getElementById('addStorageModalBg').classList.remove('show');}
+
+function renderStorageUnitList(){
+  const el=document.getElementById('storageUnitList');if(!el)return;
+  if(!storageUnits.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0 10px">No storage units yet</div>';return;}
+  el.innerHTML=storageUnits.map(su=>{
+    const tm=TYPE_META[su.type]||TYPE_META.bins;
+    const toolCount=tools.filter(t=>t.storageId===su.id).length;
+    return`<div class="su-card">
+      <div class="su-card-top">
+        <div class="su-icon">${tm.icon}</div>
+        <div class="su-name">${su.name}</div>
+        <div class="su-type">${tm.label}</div>
+      </div>
+      <div class="su-detail">${su.count} ${tm.label.toLowerCase()}${su.type==='bins'&&su.sections>1?' · Sections A-'+['','B','C'][su.sections-1]:''}${su.desc?' · '+su.desc:''}</div>
+      <div class="su-detail" style="margin-top:4px">${toolCount} item${toolCount!==1?'s':''} stored here</div>
+      <div class="su-actions">
+        <button class="su-btn" onclick="openAddStorageModal('${su.id}')">✏️ Edit</button>
+        <button class="su-btn del" onclick="deleteStorageUnit('${su.id}')">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateStorageSelect(){
+  const sel=document.getElementById('storageUnitSelect');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML=storageUnits.map(su=>`<option value="${su.id}"${su.id===cur?' selected':''}>${TYPE_META[su.type]?.icon||'🗄️'} ${su.name}</option>`).join('');
+  if(!sel.value&&storageUnits.length)sel.value=storageUnits[0].id;
+}
+
+// ── IMAGE ─────────────────────────────────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  currentImgType=['image/jpeg','image/png','image/gif','image/webp'].includes(file.type)?file.type:'image/jpeg';
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    currentImgB64=ev.target.result.split(',')[1];
+    const img=document.getElementById('previewImg');
+    img.src=ev.target.result;img.style.display='block';
+    document.getElementById('scanZone').classList.add('has-image');
+    document.querySelector('.scan-icon').style.display='none';
+    document.querySelector('.scan-label').style.display='none';
+    document.getElementById('analyseBtn').disabled=false;
+    document.getElementById('resultCard').classList.remove('show');
+    document.getElementById('adjustCard').classList.remove('show');
+  };
+  reader.readAsDataURL(file);
+});
+
+// ── API ───────────────────────────────────────────────────────────────────────
+function getApiKey(){
+  let k=localStorage.getItem('ts_openai_key');
+  if(!k){k=prompt('Enter your OpenAI API key\nGet one at platform.openai.com → API Keys\nSaved only on this device:');
+    if(k&&k.startsWith('sk-'))localStorage.setItem('ts_openai_key',k.trim());else return null;}
+  return k;
+}
+function resetApiKey(){localStorage.removeItem('ts_openai_key');showToast('API key cleared');}
+
+function doScan(){currentMode==='adjust'?analyseForAdjust():analyseImage();}
+
+// ── ADD SCAN ──────────────────────────────────────────────────────────────────
+async function analyseImage(){
+  if(!currentImgB64)return;
+  const apiKey=getApiKey();if(!apiKey){showToast('No API key',true);return;}
+  document.getElementById('thinking').classList.add('show');
+  document.getElementById('analyseBtn').disabled=true;
+  const msgs=['Reading label…','Identifying brand…','Extracting details…','Detecting category…'];
+  let mi=0;const ticker=setInterval(()=>{document.getElementById('thinkingMsg').textContent=msgs[mi++%msgs.length];},900);
+  try{
+    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'gpt-4o',max_tokens:700,messages:[{role:'user',content:[
+        {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
+        {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from ISO code last 2 digits or label","extraField1":"pitch for taps / flutes for endmills","extraField2":"tap type","notes":"EDP, lot, barcode","qty":1,"confidence":"high or medium or low"}\n\n=== BRAND IDENTIFICATION FROM PART NUMBER ===\nISCAR part numbers: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT, CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG — if part number starts with any of these → brand=ISCAR\nSECO part numbers: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D, TP2500, MF5 → brand=SECO\nGühring part numbers: start with 4112, 4115, 4229, RT100 → brand=Gühring\n\n=== CATEGORY RULES (use part number first, then image) ===\nDRILL INSERT: IDI (ISCAR self-grip drill tip), ICP (ISCAR Sumocham drill tip), ICM (ISCAR Sumocham drill tip), HCP (ISCAR Chamdrill tip), Gühring 4112/4115/4229 series tips. These go INTO a drill holder/body. Always have a cutting diameter.\nMILLING INSERT: Used in face mills, shoulder mills, slot mills. Shapes: SPGX, RPHT, APKT, SEHT, OFMT, XOEX, LNMX, RDMT, RCMT, RCGX. Usually round, square, or octagonal. Have flat or chip-breaker top for milling operations.\nTURNING INSERT: Used in lathe boring bars and turning tools. ISO shape codes: CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG, WNMG. Triangle, diamond, or rhombic shapes.\nTAP: ONLY if label shows thread designation like M6x1.0, M10x1.5, 1/4-20, UNC, UNF, BSP. Always threaded tool for cutting internal threads. Never confuse with end mills.\nEND MILL (includes slot drills): Solid carbide. Described with diameter + number of flutes + OAL. Names: end mill, slot drill, ball nose, corner radius mill, roughing end mill. 2-flute slot drills = still end_mill category.\nOTHER: reamers, boring bars, drills (not insert type), anything not above.\n\n=== ISO CODE CORNER RADIUS ===\nFor inserts with ISO codes (e.g. CNMG 12 04 08): last 2 digits = corner radius in 0.1mm. 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6, 02=R0.2\nFor Gühring/drill inserts: corner radius from label or leave blank.\n\nBe exact with part numbers and sizes. Use web knowledge if brand not visible.`}
+      ]}]})
+    });
+    clearInterval(ticker);
+    if(!resp.ok){
+      if(resp.status===401){localStorage.removeItem('ts_openai_key');showToast('Invalid key — cleared',true);}
+      else if(resp.status===429)showToast('Rate limit — retry shortly',true);
+      else showToast('Error '+resp.status,true);
+      document.getElementById('thinking').classList.remove('show');
+      document.getElementById('analyseBtn').disabled=false;return;
+    }
+    const data=await resp.json();
+    const raw=data.choices?.[0]?.message?.content||'';
+    let p;try{const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
+    catch{p={category:'other',brand:'',partNumber:'',diameter:'',shape:'',grade:'',notes:'',qty:1,confidence:'low'};}
+
+    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',other:'other'};
+    currentCat=catMap[p.category]||'other';
+    renderCatTags();renderCatFields();
+
+    populateBrandSelect('fBrand',p.brand);
+    // Force brand selection — ensure the select shows the correct brand
+    const brandSel=document.getElementById('fBrand');
+    if(brandSel&&p.brand){
+      // Try to find exact match first
+      let found=false;
+      for(let opt of brandSel.options){if(opt.value===p.brand||opt.text===p.brand){brandSel.value=opt.value;found=true;break;}}
+      // If not found, add it dynamically and select it
+      if(!found&&p.brand!==''){
+        const opt=document.createElement('option');opt.value=p.brand;opt.text=p.brand;opt.selected=true;
+        brandSel.insertBefore(opt,brandSel.firstChild);brandSel.value=p.brand;
+      }
+    }
+    document.getElementById('fPart').value=p.partNumber||'';
+    document.getElementById('fGrade').value=p.grade||'';
+    document.getElementById('fQty').value=p.qty||1;
+    document.getElementById('fNotes').value=p.notes||'';
+    const dEl=document.getElementById('fDiam');if(dEl)dEl.value=p.diameter||'';
+    const shEl=document.getElementById('fShape');if(shEl)shEl.value=p.shape||'';
+    const flEl=document.getElementById('fFlutes');if(flEl)flEl.value=p.extraField1||'';
+    const piEl=document.getElementById('fPitch');if(piEl)piEl.value=p.extraField1||'';
+    const crEl=document.getElementById('fCorner');if(crEl)crEl.value=p.cornerRadius||p.extraField2||'';
+    const crEl2=document.getElementById('fCornerRadius');if(crEl2)crEl2.value=p.cornerRadius||'';
+    const leEl=document.getElementById('fLength');if(leEl)leEl.value=p.extraField1||'';
+
+    const conf=(p.confidence||'low').toLowerCase();
+    const badge=document.getElementById('confBadge');
+    badge.textContent=conf.toUpperCase();
+    badge.className='conf-badge '+(conf==='high'?'conf-high':conf==='medium'?'conf-med':'conf-low');
+
+    renderLocPicker('locRow','','','');
+
+    document.getElementById('thinking').classList.remove('show');
+    document.getElementById('resultCard').classList.add('show');
+    document.getElementById('analyseBtn').disabled=false;
+
+    // Check if already in stock — show modal instead of toast
+    const pnCheck=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+    const brCheck=(p.brand||'').toLowerCase();
+    const dmCheck=(p.diameter||'').replace(/[^\d.]/g,'');
+    const inStockMatch=tools.find(t=>{
+      const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+      const tbr=(t.brand||'').toLowerCase();
+      const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
+      const pnMatch=pnCheck&&tpn&&tpn===pnCheck;
+      const brMatch=!brCheck||!tbr||(tbr.includes(brCheck)||brCheck.includes(tbr));
+      const dmMatch=!dmCheck||!tdm||Math.abs(parseFloat(dmCheck)-parseFloat(tdm))<0.2;
+      return pnMatch&&brMatch&&dmMatch;
+    });
+    if(inStockMatch){
+      inStockMatchedTool=inStockMatch;
+      const ls=locStr(inStockMatch)||'No location set';
+      document.getElementById('inStockDetails').innerHTML=
+        `<b>${inStockMatch.brand||''} ${inStockMatch.partNumber}</b><br>`+
+        `${[inStockMatch.diameter,inStockMatch.shape,inStockMatch.cornerRadius,inStockMatch.grade].filter(Boolean).join(' · ')}<br>`+
+        `<span style="color:var(--accent2)">📦 ${ls}</span><br>`+
+        `<span style="color:var(--green)">In stock: ${inStockMatch.qty} pcs</span>`;
+      document.getElementById('inStockModalBg').classList.add('show');
+    }
+
+  }catch(err){
+    clearInterval(ticker);
+    document.getElementById('thinking').classList.remove('show');
+    document.getElementById('analyseBtn').disabled=false;
+    showToast('Network error',true);
+  }
+}
+
+function switchToAdjustFromResult(){
+  const pn=document.getElementById('fPart').value;
+  const br=getBrand('fBrand','newBrandInput');
+  const dm=(document.getElementById('fDiam')||{}).value||'';
+  const gr=document.getElementById('fGrade').value;
+  document.getElementById('resultCard').classList.remove('show');
+  findAndShowMatches({partNumber:pn,brand:br,diameter:dm,grade:gr});
+}
+
+// ── ADJUST SCAN ───────────────────────────────────────────────────────────────
+async function analyseForAdjust(){
+  if(!currentImgB64)return;
+  const apiKey=getApiKey();if(!apiKey){showToast('No API key',true);return;}
+  document.getElementById('thinking').classList.add('show');
+  document.getElementById('analyseBtn').disabled=true;
+  document.getElementById('adjustCard').classList.remove('show');
+  const msgs=['Reading label…','Searching stock…','Matching…'];
+  let mi=0;const ticker=setInterval(()=>{document.getElementById('thinkingMsg').textContent=msgs[mi++%msgs.length];},800);
+  try{
+    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'gpt-4o',max_tokens:300,messages:[{role:'user',content:[
+        {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
+        {type:'text',text:`Read this cutting tool label. If brand not visible, identify from part number.\n\nISCAR codes: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, CNMG, TNMG, DCMT etc → brand=ISCAR\nSECO codes: SPGX, RPHT, RCMT, grades T400D/TP2500 → brand=SECO\nGühring: 4112, 4115, 4229 → brand=Gühring\n\nReturn ONLY raw JSON:\n{"brand":"","partNumber":"","diameter":"","grade":""}\nBe exact with the part number.`}
+      ]}]})
+    });
+    clearInterval(ticker);
+    if(!resp.ok){showToast('Error '+resp.status,true);document.getElementById('thinking').classList.remove('show');document.getElementById('analyseBtn').disabled=false;return;}
+    const data=await resp.json();
+    const raw=data.choices?.[0]?.message?.content||'';
+    let p;try{const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
+    catch{p={brand:'',partNumber:'',diameter:'',grade:''};}
+    document.getElementById('thinking').classList.remove('show');
+    document.getElementById('analyseBtn').disabled=false;
+    findAndShowMatches(p);
+  }catch(err){
+    clearInterval(ticker);
+    document.getElementById('thinking').classList.remove('show');
+    document.getElementById('analyseBtn').disabled=false;
+    showToast('Network error',true);
+  }
+}
+
+function findAndShowMatches(p){
+  const pn=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+  const br=(p.brand||'').toLowerCase();
+  const dm=(p.diameter||'').replace(/[^\d.]/g,'');
+  const scored=tools.map(t=>{
+    let score=0;
+    const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+    const tbr=(t.brand||'').toLowerCase();
+    const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
+    if(pn&&tpn&&tpn===pn)score+=100;
+    else if(pn&&tpn&&(tpn.includes(pn)||pn.includes(tpn)))score+=60;
+    if(br&&tbr&&(tbr.includes(br)||br.includes(tbr)))score+=20;
+    if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.1)score+=30;
+    else if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.5)score+=10;
+    if(p.grade&&t.grade&&t.grade.toLowerCase()===p.grade.toLowerCase())score+=15;
+    return{tool:t,score};
+  }).filter(x=>x.score>=20).sort((a,b)=>b.score-a.score).slice(0,5);
+
+  adjSelectedId=null;
+  document.getElementById('adjQtySection').style.display='none';
+  const el=document.getElementById('adjMatches');
+  const hdr=document.getElementById('adjHeader');
+
+  if(!scored.length){
+    hdr.textContent='No Match Found';
+    el.innerHTML=`<div class="adj-no-match">No matching items found in stock.<br><span style="font-size:11px">AI read: <b>${p.brand||'?'}</b> ${p.partNumber||'?'} ${p.diameter||''}</span><br><span style="font-size:11px;color:var(--accent)">Use Add Stock mode to add it first.</span></div>`;
+  }else{
+    hdr.textContent=scored[0].score>=100?'✓ Exact Match Found':`${scored.length} Match${scored.length>1?'es':''} Found`;
+    el.innerHTML=scored.map(({tool:t})=>{
+      const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+      const loc=locStr(t)||'No location set';
+      return`<div class="adj-item" id="adj-${t.id}" onclick="selectAdjItem(${t.id})">
+        <div class="adj-pn">${t.brand||''} ${t.partNumber}</div>
+        <div class="adj-sub">${sub||'—'}</div>
+        <div class="adj-loc">📦 ${loc} · ${t.qty} pcs</div>
+      </div>`;
+    }).join('');
+    if(scored.length===1&&scored[0].score>=60)selectAdjItem(scored[0].tool.id);
+  }
+  document.getElementById('adjustCard').classList.add('show');
+}
+
+function selectAdjItem(id){
+  adjSelectedId=id;
+  const t=tools.find(x=>x.id===id);if(!t)return;
+  document.querySelectorAll('.adj-item').forEach(el=>el.classList.remove('selected'));
+  const el=document.getElementById('adj-'+id);if(el)el.classList.add('selected');
+  adjCurrentQty=t.qty;adjNewQty=t.qty;
+  document.getElementById('adjNewQty').textContent=adjNewQty;
+  updateAdjDesc();
+  document.getElementById('adjQtySection').style.display='block';
+}
+
+function adjChange(delta){
+  adjNewQty=Math.max(0,adjNewQty+delta);
+  document.getElementById('adjNewQty').textContent=adjNewQty;
+  updateAdjDesc();
+}
+
+function updateAdjDesc(){
+  const diff=adjNewQty-adjCurrentQty;
+  const el=document.getElementById('adjChangeDesc');
+  if(diff===0)el.textContent='No change from current '+adjCurrentQty+' pcs';
+  else if(diff>0)el.textContent=`+${diff} added — new total: ${adjNewQty} pcs`;
+  else el.textContent=`${Math.abs(diff)} removed — new total: ${adjNewQty} pcs`;
+  el.style.color=diff<0?'var(--warn)':diff>0?'var(--green)':'var(--muted)';
+}
+
+function confirmAdj(){
+  if(!adjSelectedId)return;
+  const idx=tools.findIndex(t=>t.id===adjSelectedId);if(idx<0)return;
+  const diff=adjNewQty-tools[idx].qty;
+  tools[idx].qty=adjNewQty;tools[idx].lastAdjusted=new Date().toISOString();
+  save('ts_tools',tools);updateCount();
+  showToast(diff===0?'No change':diff>0?`+${diff} added · now ${adjNewQty} pcs`:`${Math.abs(diff)} removed · now ${adjNewQty} pcs`,diff<0);
+  document.getElementById('adjustCard').classList.remove('show');
+  adjSelectedId=null;clearScan();
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────────
+function submitTool(){
+  const brand=getBrand('fBrand','newBrandInput');
+  const pn=document.getElementById('fPart').value.trim();
+  if(!pn){showToast('Part number required',true);return;}
+  // Check location not already taken
+  const locCheck=getLocValues('locRow');
+  if(locCheck.storageId&&locCheck.bin){
+    const taken=isLocationTaken(locCheck.storageId,locCheck.bin,locCheck.section);
+    if(taken){
+      const su=getSU(locCheck.storageId);
+      const tm=TYPE_META[su?.type]||TYPE_META.bins;
+      showToast(`${tm.slotLabel} ${locCheck.bin}${locCheck.section?' '+locCheck.section:''} already has: ${taken.partNumber}`,true);
+      return;
+    }
+  }
+  const extra={};
+  ['fDiam','fShape','fPitch','fTapType','fFlutes','fLength','fCorner','fCornerRadius'].forEach(id=>{const el=document.getElementById(id);if(el)extra[id]=el.value;});
+  const loc=getLocValues('locRow');
+  const tool={
+    id:Date.now(),cat:currentCat,brand,
+    partNumber:pn,diameter:extra.fDiam||'',shape:extra.fShape||'',
+    cornerRadius:extra.fCornerRadius||extra.fCorner||'',
+    grade:document.getElementById('fGrade').value,
+    qty:parseInt(document.getElementById('fQty').value)||1,
+    notes:document.getElementById('fNotes').value,
+    storageId:loc.storageId,bin:loc.bin,section:loc.section,
+    extra,addedAt:new Date().toISOString(),
+  };
+  if(brand&&!DEFAULT_BRANDS.includes(brand)&&!customBrands.includes(brand)){customBrands.push(brand);save('ts_brands',customBrands);}
+  tools.push(tool);save('ts_tools',tools);updateCount();
+  const ls=locStr(tool);
+  showToast('✓ Added'+(ls?' · '+ls:''));
+  clearScan();
+}
+
+function clearScan(){
+  currentImgB64=null;
+  const img=document.getElementById('previewImg');img.style.display='none';img.src='';
+  document.getElementById('scanZone').classList.remove('has-image');
+  document.querySelector('.scan-icon').style.display='block';
+  document.querySelector('.scan-label').style.display='block';
+  document.getElementById('analyseBtn').disabled=true;
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('adjustCard').classList.remove('show');
+  document.getElementById('thinking').classList.remove('show');
+  document.getElementById('fileInput').value='';
+  adjSelectedId=null;
+  document.getElementById('adjQtySection').style.display='none';
+}
+
+// ── INVENTORY ─────────────────────────────────────────────────────────────────
+function renderInventory(){
+  const q=(document.getElementById('searchBox').value||'').toLowerCase();
+  const cat=document.getElementById('invCatFilter').value;
+  const el=document.getElementById('invList');
+  let filtered=tools.filter(t=>(!cat||t.cat===cat)&&(!q||[t.brand,t.partNumber,t.diameter,t.grade,t.shape,t.notes].some(v=>(v||'').toLowerCase().includes(q))));
+  if(!filtered.length){el.innerHTML='<div style="text-align:center;padding:50px 0;color:var(--muted);font-size:13px;">No tools found.<br>Scan something to get started.</div>';return;}
+  const grouped={};filtered.forEach(t=>{const k=t.cat||'other';if(!grouped[k])grouped[k]=[];grouped[k].push(t);});
+  let html='';
+  Object.entries(grouped).forEach(([c,items])=>{
+    const meta=CAT_META[c]||CAT_META.other;
+    html+=`<div class="inv-group"><div class="inv-group-title">${meta.icon} ${meta.label}<span class="inv-group-count">${items.length}</span></div>`;
+    items.sort((a,b)=>(a.brand||'').localeCompare(b.brand||'')).forEach(t=>{
+      const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+      const ls=locStr(t);
+      html+=`<div class="inv-item">
+        <div class="cat-dot" style="background:${meta.color}"></div>
+        <div class="inv-main"><div class="inv-pn">${t.brand||''} ${t.partNumber}</div><div class="inv-sub">${sub||t.notes||'—'}</div></div>
+        <div class="inv-right">${ls?`<div class="inv-loc">${ls}</div>`:''}<div class="inv-qty">${t.qty} pcs</div></div>
+        <button class="inv-edit-btn" onclick="openEdit(${t.id})">Edit</button>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+// ── STORAGE VIEW ──────────────────────────────────────────────────────────────
+function renderStorageView(){
+  const suId=document.getElementById('storageUnitSelect').value;
+  const su=getSU(suId);
+  const el=document.getElementById('storageView');
+  if(!su){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:40px 0">Select a storage unit above</div>';return;}
+  const tm=TYPE_META[su.type]||TYPE_META.bins;
+
+  if(su.type==='bins'){
+    // Grid view for bins
+    let html='<div class="bin-grid-wrap">';
+    for(let b=1;b<=su.count;b++){
+      const inBin=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(b));
+      const qty=inBin.reduce((s,t)=>s+t.qty,0);
+      const preview=inBin.slice(0,2).map(t=>t.partNumber).join('<br>');
+      html+=`<div class="bin-cell${qty?' has-stock':' spare'}" onclick="openSlotModal('${suId}',${b})">
+        <div class="bc-num">BIN ${b}</div>
+        <div class="bc-items">${qty?preview:'—'}</div>
+        ${qty?`<div class="bc-qty">${qty}pcs</div>`:''}
+      </div>`;
+    }
+    html+='</div>';
+    el.innerHTML=html;
+  }else{
+    // List view for shelves/drawers
+    let html='<div style="display:flex;flex-direction:column;gap:6px">';
+    for(let b=1;b<=su.count;b++){
+      const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(b));
+      const qty=inSlot.reduce((s,t)=>s+t.qty,0);
+      const preview=inSlot.slice(0,2).map(t=>`${t.brand||''} ${t.partNumber}`).join(', ');
+      html+=`<div class="storage-cell${qty?' has-stock':''}" onclick="openSlotModal('${suId}',${b})">
+        <div class="sc-num${qty?' has-s':''}">${tm.slotLabel} ${b}</div>
+        <div class="sc-main">
+          <div class="sc-preview">${qty?preview:'Empty'}</div>
+          ${qty?`<div class="sc-qty">${qty} pcs · ${inSlot.length} item${inSlot.length!==1?'s':''}</div>`:''}
+        </div>
+      </div>`;
+    }
+    html+='</div>';
+    el.innerHTML=html;
+  }
+}
+
+function openSlotModal(suId,slotNum){
+  const su=getSU(suId);if(!su)return;
+  const tm=TYPE_META[su.type]||TYPE_META.bins;
+  const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(slotNum));
+  document.getElementById('modalTitle').textContent=`${su.name} · ${tm.slotLabel} ${slotNum}`;
+  document.getElementById('modalSub').textContent=inSlot.length?`${inSlot.length} item${inSlot.length>1?'s':''} · ${inSlot.reduce((s,t)=>s+t.qty,0)} pcs total`:'Empty';
+
+  if(!inSlot.length){
+    document.getElementById('modalItems').innerHTML='<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">Nothing stored here yet</div>';
+    document.getElementById('modalBg').classList.add('show');return;
+  }
+
+  // Group by section if bins
+  let html='';
+  if(su.type==='bins'&&su.sections>1){
+    const sections={};
+    inSlot.forEach(t=>{const s=t.section||'—';if(!sections[s])sections[s]=[];sections[s].push(t);});
+    ['A','B','C','—'].forEach(sec=>{
+      if(!sections[sec])return;
+      html+=`<div class="bin-section-hdr">Section ${sec}</div>`;
+      sections[sec].forEach(t=>html+=toolCard(t));
+    });
+  }else{
+    inSlot.forEach(t=>html+=toolCard(t));
+  }
+  document.getElementById('modalItems').innerHTML=html;
+  document.getElementById('modalBg').classList.add('show');
+}
+
+function toolCard(t){
+  const meta=CAT_META[t.cat]||CAT_META.other;
+  const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+  return`<div class="bin-tool-item">
+    <div class="bti-dot" style="background:${meta.color}"></div>
+    <div class="bti-main">
+      <div class="bti-pn">${t.brand||''} ${t.partNumber}</div>
+      <div class="bti-sub">${sub||t.notes||'—'}</div>
+      <span class="bti-tag">${meta.icon} ${meta.label}</span>
+    </div>
+    <div class="bti-right"><div class="bti-qty">${t.qty}</div><div class="bti-pcs">pcs</div></div>
+  </div>`;
+}
+
+function closeModal(e){if(!e||e.target===document.getElementById('modalBg'))document.getElementById('modalBg').classList.remove('show');}
+
+// ── EDIT ──────────────────────────────────────────────────────────────────────
+function openEdit(id){
+  const t=tools.find(x=>x.id===id);if(!t)return;
+  document.getElementById('editToolId').value=id;
+  populateBrandSelect('eBrand',t.brand);
+  document.getElementById('ePart').value=t.partNumber||'';
+  document.getElementById('eDiam').value=t.diameter||'';
+  document.getElementById('eGrade').value=t.grade||'';
+  document.getElementById('eQty').value=t.qty||1;
+  document.getElementById('eNotes').value=t.notes||'';
+  renderLocPicker('editLocRow',t.storageId||'',t.bin||'',t.section||'');
+  document.getElementById('editModalBg').classList.add('show');
+}
+
+function saveEdit(){
+  const id=parseInt(document.getElementById('editToolId').value);
+  const idx=tools.findIndex(t=>t.id===id);if(idx<0)return;
+  const brand=getBrand('eBrand','eNewBrandInput');
+  if(brand&&!DEFAULT_BRANDS.includes(brand)&&!customBrands.includes(brand)){customBrands.push(brand);save('ts_brands',customBrands);}
+  const loc=getLocValues('editLocRow');
+  // Check location not taken by another item
+  if(loc.storageId&&loc.bin){
+    const taken=isLocationTaken(loc.storageId,loc.bin,loc.section,id);
+    if(taken){
+      const su=getSU(loc.storageId);
+      const tm=TYPE_META[su?.type]||TYPE_META.bins;
+      showToast(`${tm.slotLabel} ${loc.bin}${loc.section?' '+loc.section:''} already has: ${taken.partNumber}`,true);
+      return;
+    }
+  }
+  tools[idx]={...tools[idx],brand,
+    partNumber:document.getElementById('ePart').value.trim(),
+    diameter:document.getElementById('eDiam').value.trim(),
+    grade:document.getElementById('eGrade').value.trim(),
+    qty:parseInt(document.getElementById('eQty').value)||0,
+    storageId:loc.storageId,bin:loc.bin,section:loc.section,
+    notes:document.getElementById('eNotes').value.trim(),
+    updatedAt:new Date().toISOString(),
+  };
+  save('ts_tools',tools);updateCount();closeEditModal();renderInventory();showToast('✓ Saved');
+}
+
+function deleteToolFromEdit(){
+  const id=parseInt(document.getElementById('editToolId').value);
+  if(!confirm('Delete this item from stock?'))return;
+  tools=tools.filter(t=>t.id!==id);save('ts_tools',tools);updateCount();closeEditModal();renderInventory();showToast('Deleted');
+}
+
+function closeEditModal(e){if(!e||e.target===document.getElementById('editModalBg'))document.getElementById('editModalBg').classList.remove('show');}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['scan','inventory','storage','settings'][i]===tab));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  if(tab==='inventory')renderInventory();
+  if(tab==='storage'){populateStorageSelect();renderStorageView();}
+  if(tab==='settings'){renderStorageUnitList();renderBrandList();}
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function updateCount(){const total=tools.reduce((s,t)=>s+t.qty,0);document.getElementById('hdrCount').textContent=`${tools.length} items · ${total} pcs`;}
+function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(err?' error':'');setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>t.classList.remove('show'),3200);}
+function exportCSV(){
+  if(!tools.length){showToast('No tools',true);return;}
+  const h='Category,Brand,Part Number,Diameter,Shape,Grade,Qty,Storage,Slot,Section,Notes,Added\n';
+  const r=tools.map(t=>{const su=getSU(t.storageId);return[CAT_META[t.cat]?.label||t.cat,t.brand,t.partNumber,t.diameter,t.shape,t.grade,t.qty,su?.name||'',t.bin,t.section,t.notes,t.addedAt].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',');}).join('\n');
+  const url=URL.createObjectURL(new Blob([h+r],{type:'text/csv'}));
+  const a=document.createElement('a');a.href=url;a.download='toolstock_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);
+}
+function copyJSON(){if(!tools.length){showToast('No tools',true);return;}navigator.clipboard.writeText(JSON.stringify(tools,null,2)).then(()=>showToast('Copied')).catch(()=>showToast('Copy failed',true));}
+function clearAllData(){if(!confirm('Delete ALL inventory? Cannot be undone.'))return;tools=[];save('ts_tools',tools);updateCount();showToast('Cleared');}
+
+// ── IN-STOCK MODAL ────────────────────────────────────────────────────────────
+let inStockMatchedTool = null;
+
+function closeInStockModal(){
+  document.getElementById('inStockModalBg').classList.remove('show');
+}
+
+function goToAdjustFromInStock(){
+  closeInStockModal();
+  if(!inStockMatchedTool)return;
+  setMode('adjust');
+  // Pre-populate the match and show adjuster
+  adjSelectedId=null;
+  document.getElementById('adjQtySection').style.display='none';
+  const t=inStockMatchedTool;
+  const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+  const loc=locStr(t)||'No location set';
+  document.getElementById('adjHeader').textContent='✓ Item Selected';
+  document.getElementById('adjMatches').innerHTML=`<div class="adj-item selected" id="adj-${t.id}" onclick="selectAdjItem(${t.id})">
+    <div class="adj-pn">${t.brand||''} ${t.partNumber}</div>
+    <div class="adj-sub">${sub||'—'}</div>
+    <div class="adj-loc">📦 ${loc} · ${t.qty} pcs</div>
+  </div>`;
+  document.getElementById('adjustCard').classList.add('show');
+  selectAdjItem(t.id);
+  inStockMatchedTool=null;
+}
+
+// 12. Prevent duplicate location — check before submit
+function isLocationTaken(storageId, bin, section, excludeId=null){
+  if(!storageId||!bin)return null;
+  return tools.find(t=>
+    t.id!==excludeId &&
+    t.storageId===storageId &&
+    String(t.bin)===String(bin) &&
+    (t.section||'')===(section||'')
+  )||null;
+}
+
+// Init
+updateCount();
+populateStorageSelect();
+</script>
+</body>
+</html>
