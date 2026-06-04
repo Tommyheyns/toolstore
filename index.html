@@ -211,7 +211,10 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <body>
 <header>
   <div class="logo">TOOL<span>STORE</span></div>
-  <div class="hdr-count" id="hdrCount">—</div>
+  <div style="text-align:right;line-height:1.3">
+    <div style="font-size:9px;color:rgba(255,255,255,0.45);letter-spacing:.12em;text-transform:uppercase">by</div>
+    <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:.05em">ENTEC RESOURCES</div>
+  </div>
 </header>
 <div class="tabs">
   <button class="tab active" onclick="switchTab('scan')">📷 Scan</button>
@@ -294,6 +297,16 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 
 <!-- ══ STOCK ══ -->
 <div class="page" id="page-inventory">
+  <div id="stockSummary" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px">Total Stock</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800" id="summaryItems">—</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px">Total Pieces</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent)" id="summaryPcs">—</div>
+    </div>
+  </div>
   <div class="inv-toolbar">
     <input class="search-box" id="searchBox" type="search" placeholder="Search part, brand, size…" oninput="renderInventory()">
     <select class="cat-filter" id="invCatFilter" onchange="renderInventory()">
@@ -332,6 +345,12 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <div class="settings-title">Custom Brands</div>
     <div id="brandList"></div>
     <button class="settings-btn" onclick="addBrandPrompt()"><span class="settings-icon">➕</span> Add Custom Brand</button>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">App Updates</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Tap to check for the latest version. Your stock data is never affected.</div>
+    <button class="settings-btn" id="updateBtn" onclick="checkForUpdate()"><span class="settings-icon">🔄</span> Check for Update</button>
+    <div id="updateStatus" style="display:none;font-size:12px;padding:10px 14px;border-radius:10px;margin-top:-2px;margin-bottom:8px"></div>
   </div>
   <div class="settings-section">
     <div class="settings-title">Export</div>
@@ -402,6 +421,21 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <button class="edit-save" onclick="saveEdit()">✓ Save Changes</button>
     <button class="edit-delete" onclick="deleteToolFromEdit()">🗑 Delete This Item</button>
     <button class="modal-close" onclick="closeEditModal()" style="margin-top:8px">Cancel</button>
+  </div>
+</div>
+
+<!-- Category confirm modal -->
+<div class="modal-bg" id="catConfirmModalBg">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px">❓ Confirm Category</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">AI is unsure whether this is a milling or turning insert — it could be used in either. What is it used for?</div>
+    <div id="catConfirmDetails" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px"></div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <button onclick="confirmCategory('milling')" style="flex:1;padding:14px;border-radius:var(--radius);background:#eab30822;border:2px solid #eab308;color:#eab308;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🟡 Milling Insert</button>
+      <button onclick="confirmCategory('turning')" style="flex:1;padding:14px;border-radius:var(--radius);background:#f9731622;border:2px solid #f97316;color:#f97316;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🟠 Turning Insert</button>
+    </div>
+    <button onclick="confirmCategory(currentCat)" style="width:100%;padding:12px;border-radius:var(--radius);background:var(--surface);color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;border:1px solid var(--border);cursor:pointer">Keep AI suggestion and continue</button>
   </div>
 </div>
 
@@ -706,7 +740,7 @@ async function analyseImage(){
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
       body:JSON.stringify({model:'gpt-4o',max_tokens:700,messages:[{role:'user',content:[
         {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
-        {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from ISO code last 2 digits or label","extraField1":"pitch for taps / flutes for endmills","extraField2":"tap type","notes":"EDP, lot, barcode","qty":1,"confidence":"high or medium or low"}\n\n=== BRAND IDENTIFICATION FROM PART NUMBER ===\nISCAR part numbers: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT, CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG — if part number starts with any of these → brand=ISCAR\nSECO part numbers: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D, TP2500, MF5 → brand=SECO\nGühring part numbers: start with 4112, 4115, 4229, RT100 → brand=Gühring\n\n=== CATEGORY RULES (use part number first, then image) ===\nDRILL INSERT: IDI (ISCAR self-grip drill tip), ICP (ISCAR Sumocham drill tip), ICM (ISCAR Sumocham drill tip), HCP (ISCAR Chamdrill tip), Gühring 4112/4115/4229 series tips. These go INTO a drill holder/body. Always have a cutting diameter.\nMILLING INSERT: Used in face mills, shoulder mills, slot mills. Shapes: SPGX, RPHT, APKT, SEHT, OFMT, XOEX, LNMX, RDMT, RCMT, RCGX. Usually round, square, or octagonal. Have flat or chip-breaker top for milling operations.\nTURNING INSERT: Used in lathe boring bars and turning tools. ISO shape codes: CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG, WNMG. Triangle, diamond, or rhombic shapes.\nTAP: ONLY if label shows thread designation like M6x1.0, M10x1.5, 1/4-20, UNC, UNF, BSP. Always threaded tool for cutting internal threads. Never confuse with end mills.\nEND MILL (includes slot drills): Solid carbide. Described with diameter + number of flutes + OAL. Names: end mill, slot drill, ball nose, corner radius mill, roughing end mill. 2-flute slot drills = still end_mill category.\nOTHER: reamers, boring bars, drills (not insert type), anything not above.\n\n=== ISO CODE CORNER RADIUS ===\nFor inserts with ISO codes (e.g. CNMG 12 04 08): last 2 digits = corner radius in 0.1mm. 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6, 02=R0.2\nFor Gühring/drill inserts: corner radius from label or leave blank.\n\nBe exact with part numbers and sizes. Use web knowledge if brand not visible.`}
+        {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from ISO code last 2 digits or label","extraField1":"pitch for taps / flutes for endmills","extraField2":"tap type","notes":"EDP, lot, barcode ref","qty":1,"confidence":"high or medium or low"}\n\nSet categoryConfidence=uncertain ONLY when you genuinely cannot tell if an insert is milling vs turning (e.g. CN/BN shapes that could be used in either a face mill body or a lathe tool). In all other cases set categoryConfidence=certain.\n\n=== BRAND IDENTIFICATION ===\nISCAR: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT → brand=ISCAR\nSECO: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D/TP2500/MF5 → brand=SECO\nGühring: 4112, 4115, 4229, 5516, 5525, 5537, 5735, RT100, SL-RATIOFRAESER → brand=Gühring\nBIG Daishowa: CN, BN prefix or label says BIG DAISHOWA SEIKI → brand=BIG Daishowa\n\n=== GÜHRING SPECIFIC ===\nGühring labels use German: A=diameter, Stück=pieces, SL-RATIOFRAESER=end mill\nPart numbers 5735, 5516, 5525, 5537, 5262 = solid carbide end mills → category=end_mill\nOn Gühring labels diameter is shown as e.g. A 12,0 — the number after A is the diameter in mm\nDIN 6527L = 4-flute solid carbide end mill\nDIN 6535 = end mill shank standard\n\n=== ISCAR SPECIFIC ===\nICP, ICM, HCP, IDI = drill inserts (go in Sumocham/Chamdrill drill body) → category=drill_insert\nSPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG = turning inserts → category=turning_insert\nGrades: IC908, IC528, IC830, IC807 = ISCAR\n\n=== SECO SPECIFIC ===\nSPGX, RPHT, RCMT, RCGX = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT = turning inserts → category=turning_insert\nSD, MDN, MEGA prefix = drills/end mills\nGrades: T400D, TP2500, TP1500, MF5 = SECO\n\n=== BIG DAISHOWA SPECIFIC ===\nCN prefix inserts (e.g. CN0906) used in face mill bodies → categoryConfidence=uncertain (could be milling or turning)\nBN prefix = ball nose inserts\nGrade ACM250F, ACM300 = BIG Daishowa\n\n=== CATEGORY RULES ===\nDRILL INSERT: ICP, ICM, HCP, IDI, Gühring 4112/4115/4229. Always have cutting diameter. Go into drill body.\nMILLING INSERT: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT, RCMT. Round/square/octagonal.\nTURNING INSERT: Lathe/boring bar inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG. Triangle/diamond/rhombic.\nTAP: ONLY if thread designation shown e.g. M6x1.0, M10x1.5, UNC, UNF. Never confuse with end mills.\nEND MILL: Solid carbide, has flutes. Gühring 5735/5516/5525/5537, SL-RATIOFRAESER, slot drills, ball nose, corner radius mills. 2-flute slot drills = end_mill.\nOTHER: reamers, boring bars, indexable drills (not insert), anything else.\n\n=== ISO CORNER RADIUS ===\nISO code last 2 digits = corner radius x 0.1mm: 02=R0.2, 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6\nGühring end mills: read corner radius from label (R-RF1 = sharp corner/no radius)\n\nBe exact with part numbers and diameters. Use web knowledge for unknown brands.`}
       ]}]})
     });
     clearInterval(ticker);
@@ -726,65 +760,22 @@ async function analyseImage(){
     currentCat=catMap[p.category]||'other';
     renderCatTags();renderCatFields();
 
+    // If AI is uncertain about milling vs turning, ask user
+    if(p.categoryConfidence==='uncertain'){
+      pendingAIResult=p;
+      document.getElementById('catConfirmDetails').innerHTML=
+        `<b>${p.brand||'Unknown brand'} ${p.partNumber||''}</b><br>`+
+        `${p.diameter||''} ${p.grade||''}<br>`+
+        `<span style="color:var(--muted);font-size:11px">AI suggested: ${CAT_META[currentCat]?.label||currentCat}</span>`;
+      document.getElementById('thinking').classList.remove('show');
+      document.getElementById('analyseBtn').disabled=false;
+      document.getElementById('catConfirmModalBg').classList.add('show');
+      return;
+    }
+
     populateBrandSelect('fBrand',p.brand);
-    // Force brand selection — ensure the select shows the correct brand
-    const brandSel=document.getElementById('fBrand');
-    if(brandSel&&p.brand){
-      // Try to find exact match first
-      let found=false;
-      for(let opt of brandSel.options){if(opt.value===p.brand||opt.text===p.brand){brandSel.value=opt.value;found=true;break;}}
-      // If not found, add it dynamically and select it
-      if(!found&&p.brand!==''){
-        const opt=document.createElement('option');opt.value=p.brand;opt.text=p.brand;opt.selected=true;
-        brandSel.insertBefore(opt,brandSel.firstChild);brandSel.value=p.brand;
-      }
-    }
-    document.getElementById('fPart').value=p.partNumber||'';
-    document.getElementById('fGrade').value=p.grade||'';
-    document.getElementById('fQty').value=p.qty||1;
-    document.getElementById('fNotes').value=p.notes||'';
-    const dEl=document.getElementById('fDiam');if(dEl)dEl.value=p.diameter||'';
-    const shEl=document.getElementById('fShape');if(shEl)shEl.value=p.shape||'';
-    const flEl=document.getElementById('fFlutes');if(flEl)flEl.value=p.extraField1||'';
-    const piEl=document.getElementById('fPitch');if(piEl)piEl.value=p.extraField1||'';
-    const crEl=document.getElementById('fCorner');if(crEl)crEl.value=p.cornerRadius||p.extraField2||'';
-    const crEl2=document.getElementById('fCornerRadius');if(crEl2)crEl2.value=p.cornerRadius||'';
-    const leEl=document.getElementById('fLength');if(leEl)leEl.value=p.extraField1||'';
-
-    const conf=(p.confidence||'low').toLowerCase();
-    const badge=document.getElementById('confBadge');
-    badge.textContent=conf.toUpperCase();
-    badge.className='conf-badge '+(conf==='high'?'conf-high':conf==='medium'?'conf-med':'conf-low');
-
-    renderLocPicker('locRow','','','');
-
-    document.getElementById('thinking').classList.remove('show');
-    document.getElementById('resultCard').classList.add('show');
-    document.getElementById('analyseBtn').disabled=false;
-
-    // Check if already in stock — show modal instead of toast
-    const pnCheck=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
-    const brCheck=(p.brand||'').toLowerCase();
-    const dmCheck=(p.diameter||'').replace(/[^\d.]/g,'');
-    const inStockMatch=tools.find(t=>{
-      const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
-      const tbr=(t.brand||'').toLowerCase();
-      const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
-      const pnMatch=pnCheck&&tpn&&tpn===pnCheck;
-      const brMatch=!brCheck||!tbr||(tbr.includes(brCheck)||brCheck.includes(tbr));
-      const dmMatch=!dmCheck||!tdm||Math.abs(parseFloat(dmCheck)-parseFloat(tdm))<0.2;
-      return pnMatch&&brMatch&&dmMatch;
-    });
-    if(inStockMatch){
-      inStockMatchedTool=inStockMatch;
-      const ls=locStr(inStockMatch)||'No location set';
-      document.getElementById('inStockDetails').innerHTML=
-        `<b>${inStockMatch.brand||''} ${inStockMatch.partNumber}</b><br>`+
-        `${[inStockMatch.diameter,inStockMatch.shape,inStockMatch.cornerRadius,inStockMatch.grade].filter(Boolean).join(' · ')}<br>`+
-        `<span style="color:var(--accent2)">📦 ${ls}</span><br>`+
-        `<span style="color:var(--green)">In stock: ${inStockMatch.qty} pcs</span>`;
-      document.getElementById('inStockModalBg').classList.add('show');
-    }
+    // Fill all fields via shared function
+    fillAIResult(p);
 
   }catch(err){
     clearInterval(ticker);
@@ -1008,7 +999,11 @@ function renderStorageView(){
     for(let b=1;b<=su.count;b++){
       const inBin=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(b));
       const qty=inBin.reduce((s,t)=>s+t.qty,0);
-      const preview=inBin.slice(0,2).map(t=>t.partNumber).join('<br>');
+      // Show size/diameter instead of part number for cleaner bin view
+      const preview=inBin.slice(0,2).map(t=>{
+        const size=t.diameter||t.shape||'';
+        return size ? size : (t.partNumber||'').replace(/[A-Z]{2,}\s*/,'').trim().slice(0,8);
+      }).join('<br>');
       html+=`<div class="bin-cell${qty?' has-stock':' spare'}" onclick="openSlotModal('${suId}',${b})">
         <div class="bc-num">BIN ${b}</div>
         <div class="bc-items">${qty?preview:'—'}</div>
@@ -1143,7 +1138,13 @@ function switchTab(tab){
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
-function updateCount(){const total=tools.reduce((s,t)=>s+t.qty,0);document.getElementById('hdrCount').textContent=`${tools.length} items · ${total} pcs`;}
+function updateCount(){
+  const total=tools.reduce((s,t)=>s+t.qty,0);
+  const si=document.getElementById('summaryItems');
+  const sp=document.getElementById('summaryPcs');
+  if(si)si.textContent=tools.length+' items';
+  if(sp)sp.textContent=total+' pcs';
+}
 function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(err?' error':'');setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>t.classList.remove('show'),3200);}
 function exportCSV(){
   if(!tools.length){showToast('No tools',true);return;}
@@ -1177,6 +1178,69 @@ function restoreFromJSON(){
     document.getElementById('restoreInput').value='';
     showToast(`✓ Restored ${newItems.length} items`);
   }catch(e){showToast('Invalid JSON — check your backup',true);}
+}
+
+// ── CATEGORY CONFIRM ─────────────────────────────────────────────────────────
+let pendingAIResult = null;
+
+function confirmCategory(cat){
+  document.getElementById('catConfirmModalBg').classList.remove('show');
+  if(!pendingAIResult)return;
+  currentCat=cat;
+  renderCatTags();renderCatFields();
+  const p=pendingAIResult;
+  pendingAIResult=null;
+  fillAIResult(p);
+}
+
+function fillAIResult(p){
+  // Force brand selection
+  populateBrandSelect('fBrand',p.brand);
+  const brandSel=document.getElementById('fBrand');
+  if(brandSel&&p.brand){
+    let found=false;
+    for(let opt of brandSel.options){if(opt.value===p.brand||opt.text===p.brand){brandSel.value=opt.value;found=true;break;}}
+    if(!found&&p.brand){const opt=document.createElement('option');opt.value=p.brand;opt.text=p.brand;opt.selected=true;brandSel.insertBefore(opt,brandSel.firstChild);brandSel.value=p.brand;}
+  }
+  document.getElementById('fPart').value=p.partNumber||'';
+  document.getElementById('fGrade').value=p.grade||'';
+  document.getElementById('fQty').value=p.qty||1;
+  document.getElementById('fNotes').value=p.notes||'';
+  const dEl=document.getElementById('fDiam');if(dEl)dEl.value=p.diameter||'';
+  const shEl=document.getElementById('fShape');if(shEl)shEl.value=p.shape||'';
+  const flEl=document.getElementById('fFlutes');if(flEl)flEl.value=p.extraField1||'';
+  const piEl=document.getElementById('fPitch');if(piEl)piEl.value=p.extraField1||'';
+  const crEl=document.getElementById('fCorner');if(crEl)crEl.value=p.cornerRadius||p.extraField2||'';
+  const crEl2=document.getElementById('fCornerRadius');if(crEl2)crEl2.value=p.cornerRadius||'';
+  const leEl=document.getElementById('fLength');if(leEl)leEl.value=p.extraField1||'';
+  const conf=(p.confidence||'low').toLowerCase();
+  const badge=document.getElementById('confBadge');
+  badge.textContent=conf.toUpperCase();
+  badge.className='conf-badge '+(conf==='high'?'conf-high':conf==='medium'?'conf-med':'conf-low');
+  renderLocPicker('locRow','','','');
+  document.getElementById('thinking').classList.remove('show');
+  document.getElementById('resultCard').classList.add('show');
+  document.getElementById('analyseBtn').disabled=false;
+  // Check if already in stock
+  const pnCheck=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+  const brCheck=(p.brand||'').toLowerCase();
+  const dmCheck=(p.diameter||'').replace(/[^\d.]/g,'');
+  const inStockMatch=tools.find(t=>{
+    const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+    const tbr=(t.brand||'').toLowerCase();
+    const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
+    return pnCheck&&tpn&&tpn===pnCheck&&(!brCheck||tbr.includes(brCheck)||brCheck.includes(tbr))&&(!dmCheck||!tdm||Math.abs(parseFloat(dmCheck)-parseFloat(tdm))<0.2);
+  });
+  if(inStockMatch){
+    inStockMatchedTool=inStockMatch;
+    const ls=locStr(inStockMatch)||'No location set';
+    document.getElementById('inStockDetails').innerHTML=
+      `<b>${inStockMatch.brand||''} ${inStockMatch.partNumber}</b><br>`+
+      `${[inStockMatch.diameter,inStockMatch.shape,inStockMatch.cornerRadius,inStockMatch.grade].filter(Boolean).join(' · ')}<br>`+
+      `<span style="color:var(--accent2)">📦 ${ls}</span><br>`+
+      `<span style="color:var(--green)">In stock: ${inStockMatch.qty} pcs</span>`;
+    document.getElementById('inStockModalBg').classList.add('show');
+  }
 }
 
 // ── IN-STOCK MODAL ────────────────────────────────────────────────────────────
@@ -1216,6 +1280,102 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
     String(t.bin)===String(bin) &&
     (t.section||'')===(section||'')
   )||null;
+}
+
+// ── AUTO UPDATE ───────────────────────────────────────────────────────────────
+const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
+const APP_VERSION = localStorage.getItem('ts_version') || '1.0';
+
+async function checkForUpdate() {
+  const btn = document.getElementById('updateBtn');
+  const status = document.getElementById('updateStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="settings-icon">⏳</span> Checking…';
+  status.style.display = 'none';
+
+  try {
+    const resp = await fetch(UPDATE_URL + '?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const newHtml = await resp.text();
+
+    // Check if it's actually different
+    const currentHtml = document.documentElement.outerHTML;
+    if (newHtml.length === currentHtml.length && newHtml.includes(document.title)) {
+      status.style.display = 'block';
+      status.style.background = 'rgba(34,197,94,0.1)';
+      status.style.color = 'var(--green)';
+      status.style.border = '1px solid rgba(34,197,94,0.2)';
+      status.textContent = '✓ You already have the latest version';
+      btn.disabled = false;
+      btn.innerHTML = '<span class="settings-icon">🔄</span> Check for Update';
+      return;
+    }
+
+    // Show update available prompt
+    status.style.display = 'block';
+    status.style.background = 'rgba(240,165,0,0.1)';
+    status.style.color = 'var(--accent)';
+    status.style.border = '1px solid rgba(240,165,0,0.2)';
+    status.innerHTML = '⬆️ Update available! <span style="color:var(--muted);font-size:11px">Tap Install to apply it now.</span>';
+    
+    btn.disabled = false;
+    btn.innerHTML = '<span class="settings-icon">⬆️</span> Install Update';
+    btn.onclick = () => installUpdate(newHtml);
+
+  } catch(err) {
+    status.style.display = 'block';
+    status.style.background = 'rgba(239,68,68,0.1)';
+    status.style.color = 'var(--warn)';
+    status.style.border = '1px solid rgba(239,68,68,0.2)';
+    status.textContent = 'Could not reach update server. Check your connection.';
+    btn.disabled = false;
+    btn.innerHTML = '<span class="settings-icon">🔄</span> Check for Update';
+  }
+}
+
+function installUpdate(newHtml) {
+  if (!confirm('Install update now?\n\nYour stock data is safe — it stays on your phone.')) return;
+  
+  const status = document.getElementById('updateStatus');
+  status.style.display = 'block';
+  status.style.background = 'rgba(59,130,246,0.1)';
+  status.style.color = 'var(--accent2)';
+  status.style.border = '1px solid rgba(59,130,246,0.2)';
+  status.textContent = 'Installing… do not close the app.';
+
+  // Write new HTML to a blob and navigate to it — this replaces the page
+  // but localStorage persists because we stay on same origin
+  try {
+    // Use service worker / cache replacement approach
+    // Simplest: write to sessionStorage and reload
+    sessionStorage.setItem('ts_pending_update', newHtml);
+    
+    // Create a temporary blob URL and use it to replace page
+    const blob = new Blob([newHtml], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    
+    // We need to push to GitHub instead — guide the user
+    status.innerHTML = '✓ Downloaded! Now follow these steps:<br><br>' +
+      '1. Go to <b>github.com/Tommyheyns/toolstore</b><br>' +
+      '2. Click <b>index.html</b> → pencil icon<br>' +
+      '3. Select all → delete → paste the new code<br>' +
+      '4. Click <b>Commit changes</b><br><br>' +
+      '<span style="color:var(--muted)">Or tap below to copy the new code:</span>';
+    
+    // Copy new HTML to clipboard
+    navigator.clipboard.writeText(newHtml).then(() => {
+      showToast('New code copied to clipboard!');
+    }).catch(() => {});
+    
+    document.getElementById('updateBtn').innerHTML = '<span class="settings-icon">📋</span> Copy New Code Again';
+    document.getElementById('updateBtn').onclick = () => {
+      navigator.clipboard.writeText(newHtml).then(()=>showToast('Copied!')).catch(()=>showToast('Copy failed',true));
+    };
+    document.getElementById('updateBtn').disabled = false;
+    
+  } catch(e) {
+    status.textContent = 'Install failed: ' + e.message;
+  }
 }
 
 // Init
