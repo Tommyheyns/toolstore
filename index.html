@@ -506,6 +506,43 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     </div>
   </div>
 </div>
+<!-- Detail View Modal -->
+<div class="modal-bg" id="detailModalBg" onclick="closeDetailModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="detailBody"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button onclick="detailToReorder()" style="flex:1;padding:13px;border-radius:var(--radius);background:rgba(240,165,0,.12);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:1px solid rgba(240,165,0,.3);cursor:pointer">🛒 Reorder</button>
+      <button onclick="detailToEdit()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">✏️ Edit</button>
+    </div>
+    <button onclick="closeDetailModal()" class="modal-close" style="margin-top:8px">Close</button>
+  </div>
+</div>
+
+<!-- Reorder Modal -->
+<div class="modal-bg" id="reorderModalBg" onclick="closeReorderModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📋 Reorder Info</div>
+    <div class="modal-sub">Send this to your rep to order the right part</div>
+    <div id="reorderContent" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 15px;font-family:'DM Mono',monospace;font-size:12px;line-height:2;margin-bottom:14px;white-space:pre-wrap;color:var(--text)"></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button onclick="copyReorder()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">📋 Copy to Clipboard</button>
+      <button onclick="shareReorder()" id="reorderShareBtn" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">↗ Share</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase">Reorder Qty</div>
+        <input type="number" id="reorderQtyInput" value="1" min="1" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;outline:none" oninput="refreshReorderText()">
+      </div>
+      <div style="flex:2">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase">Rep / Supplier Name</div>
+        <input type="text" id="reorderRepInput" placeholder="e.g. Seco Tools Australia" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none" oninput="refreshReorderText()">
+      </div>
+    </div>
+    <button onclick="closeReorderModal()" class="modal-close" style="margin-top:12px">Close</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <div class="safe-pad"></div>
 
@@ -1028,11 +1065,11 @@ function renderInventory(){
     items.sort((a,b)=>(a.brand||'').localeCompare(b.brand||'')).forEach(t=>{
       const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
       const ls=locStr(t);
-      html+=`<div class="inv-item">
+      html+=`<div class="inv-item" onclick="openDetail(${t.id})" style="cursor:pointer">
         <div class="cat-dot" style="background:${meta.color}"></div>
         <div class="inv-main"><div class="inv-pn">${t.brand||''} ${t.partNumber}</div><div class="inv-sub">${sub||t.notes||'—'}</div></div>
         <div class="inv-right">${ls?`<div class="inv-loc">${ls}</div>`:''}<div class="inv-qty">${t.qty} pcs</div></div>
-        <button class="inv-edit-btn" onclick="openEdit(${t.id})">Edit</button>
+        <div style="color:var(--muted);font-size:18px;padding:0 4px;flex-shrink:0">›</div>
       </div>`;
     });
     html+='</div>';
@@ -1119,7 +1156,7 @@ function openSlotModal(suId,slotNum){
 function toolCard(t){
   const meta=CAT_META[t.cat]||CAT_META.other;
   const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
-  return`<div class="bin-tool-item">
+  return`<div class="bin-tool-item" onclick="openDetail(${t.id})" style="cursor:pointer">
     <div class="bti-dot" style="background:${meta.color}"></div>
     <div class="bti-main">
       <div class="bti-pn">${t.brand||''} ${t.partNumber}</div>
@@ -1127,6 +1164,7 @@ function toolCard(t){
       <span class="bti-tag">${meta.icon} ${meta.label}</span>
     </div>
     <div class="bti-right"><div class="bti-qty">${t.qty}</div><div class="bti-pcs">pcs</div></div>
+    <div style="color:var(--muted);font-size:18px;padding:0 2px;align-self:center">›</div>
   </div>`;
 }
 
@@ -1248,6 +1286,31 @@ function confirmCategory(cat){
   fillAIResult(p);
 }
 
+// ── RADIUS / SECO SUFFIX HELPERS ─────────────────────────────────────────────
+function normaliseRadius(raw){
+  if(!raw)return '';
+  // Fix R.4 → R0.4, R.8 → R0.8 etc
+  let r=raw.toString().trim().replace(/^[Rr]\.(\d)/,'R0.$1');
+  // If still no leading zero after R, add it
+  r=r.replace(/^[Rr](\.\d)/i,'R0$1');
+  // Decode SECO -C1 / -C2 etc suffix → corner radius
+  return r;
+}
+function decodeSecoSuffix(partNumber){
+  // SECO part numbers end in -C1, -C2, -C3 etc where digit = corner radius ×0.1mm
+  const m=(partNumber||'').match(/-C(\d)$/i);
+  if(m)return `R0.${m[1]}`;
+  return '';
+}
+function fixCornerRadius(brand, partNumber, rawRadius){
+  // Try SECO suffix first
+  if((brand||'').toLowerCase().includes('seco')){
+    const fromSuffix=decodeSecoSuffix(partNumber);
+    if(fromSuffix)return fromSuffix;
+  }
+  return normaliseRadius(rawRadius);
+}
+
 function fillAIResult(p){
   // Force brand selection
   populateBrandSelect('fBrand',p.brand);
@@ -1265,8 +1328,13 @@ function fillAIResult(p){
   const shEl=document.getElementById('fShape');if(shEl)shEl.value=p.shape||'';
   const flEl=document.getElementById('fFlutes');if(flEl)flEl.value=p.extraField1||'';
   const piEl=document.getElementById('fPitch');if(piEl)piEl.value=p.extraField1||'';
-  const crEl=document.getElementById('fCorner');if(crEl)crEl.value=p.cornerRadius||p.extraField2||'';
-  const crEl2=document.getElementById('fCornerRadius');if(crEl2)crEl2.value=p.cornerRadius||'';
+  const crEl=document.getElementById('fCorner');
+  const crEl2=document.getElementById('fCornerRadius');
+  const brand4cr=p.brand||getBrand('fBrand','newBrandInput')||'';
+  const pn4cr=p.partNumber||document.getElementById('fPart')?.value||'';
+  const fixedRadius=fixCornerRadius(brand4cr,pn4cr,p.cornerRadius||p.extraField2||'');
+  if(crEl)crEl.value=fixedRadius;
+  if(crEl2)crEl2.value=fixedRadius;
   const leEl=document.getElementById('fLength');if(leEl)leEl.value=p.extraField1||'';
   const conf=(p.confidence||'low').toLowerCase();
   const badge=document.getElementById('confBadge');
@@ -1276,6 +1344,8 @@ function fillAIResult(p){
   document.getElementById('thinking').classList.remove('show');
   document.getElementById('resultCard').classList.add('show');
   document.getElementById('analyseBtn').disabled=false;
+  // Trigger background verify to cross-check specs
+  verifySingleAfterScan(p.brand||'', p.partNumber||'', p.notes||'');
   // Check if already in stock
   const pnCheck=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
   const brCheck=(p.brand||'').toLowerCase();
@@ -1433,6 +1503,97 @@ function installUpdate(newHtml) {
   }
 }
 
+// ── POST-SCAN VERIFY ──────────────────────────────────────────────────────────
+async function verifySingleAfterScan(brand, partNumber, notes){
+  if(!brand||!partNumber)return;
+  const apiKey=localStorage.getItem('ts_openai_key');
+  if(!apiKey)return;
+  // Show a subtle indicator in the result header
+  const header=document.querySelector('#resultCard .result-header');
+  const origText=header?header.childNodes[0].textContent:'';
+  if(header)header.childNodes[0].textContent='AI Reading · Verifying…';
+  try{
+    const prompt=buildVerifyPrompt(brand,partNumber,notes,'','','','','');
+    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'gpt-4o-search-preview',max_tokens:500,messages:[{role:'user',content:prompt}]})
+    });
+    if(!resp.ok){
+      // Fallback to gpt-4o
+      const resp2=await fetch('https://api.openai.com/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+        body:JSON.stringify({model:'gpt-4o',max_tokens:500,messages:[{role:'user',content:prompt}]})
+      });
+      if(!resp2.ok){if(header)header.childNodes[0].textContent='AI Reading ✓';return;}
+      const d2=await resp2.json();
+      applyScanVerify(brand,partNumber,d2,header);return;
+    }
+    const data=await resp.json();
+    applyScanVerify(brand,partNumber,data,header);
+  }catch(e){if(header)header.childNodes[0].textContent='AI Reading ✓';}
+}
+
+function applyScanVerify(brand,partNumber,data,header){
+  const raw=data.choices?.[0]?.message?.content||'';
+  let p;
+  try{const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
+  catch{if(header)header.childNodes[0].textContent='AI Reading ✓';return;}
+  if(!p.found){if(header)header.childNodes[0].textContent='AI Reading ✓';return;}
+
+  // Fix radius using helpers
+  const fixedRadius=fixCornerRadius(brand,partNumber,p.cornerRadius||'');
+  let changed=0;
+  // Patch fields if AI has better data
+  const dEl=document.getElementById('fDiam');
+  if(dEl&&p.diameter&&!dEl.value){dEl.value=p.diameter;changed++;}
+  const shEl=document.getElementById('fShape');
+  if(shEl&&p.shape&&!shEl.value){shEl.value=p.shape;changed++;}
+  const crEl=document.getElementById('fCornerRadius');
+  const crEl2=document.getElementById('fCorner');
+  if(fixedRadius){
+    if(crEl&&crEl.value!==fixedRadius){crEl.value=fixedRadius;changed++;}
+    if(crEl2&&crEl2.value!==fixedRadius){crEl2.value=fixedRadius;changed++;}
+  }
+  const grEl=document.getElementById('fGrade');
+  if(grEl&&p.grade&&!grEl.value){grEl.value=p.grade;changed++;}
+  const ntEl=document.getElementById('fNotes');
+  if(ntEl&&p.description&&!ntEl.value){ntEl.value=p.description;changed++;}
+
+  if(header)header.childNodes[0].textContent='AI Reading'+(changed?` · ✓ ${changed} field${changed>1?'s':''} verified`:'  ✓ Verified');
+  if(changed)showToast(`✓ Verified — ${changed} field${changed>1?'s':''} corrected from manufacturer data`);
+}
+
+function buildVerifyPrompt(brand,partNumber,notes,diameter,shape,cornerRadius,grade,cat){
+  return `You are a cutting tool expert. Look up this exact part using manufacturer websites, distributor catalogs, and your training knowledge.
+
+Brand: ${brand}
+Part Number: ${partNumber}
+Additional info from label: ${notes||'—'}
+Current data: diameter="${diameter}", shape="${shape}", cornerRadius="${cornerRadius}", grade="${grade}", category="${cat}"
+
+Search for "${brand} ${partNumber}" to find the official manufacturer specification.
+
+SECO part numbers: suffix -C1=R0.1mm, -C2=R0.2mm, -C3=R0.3mm, -C4=R0.4mm (corner radius from C-suffix, NOT from ISO code digits for SECO).
+ISCAR: last 2 digits of ISO code × 0.1mm = corner radius (04→R0.4, 08→R0.8, 12→R1.2).
+CRITICAL: cornerRadius MUST be "R0.4" format — never "R.4". Always include the leading zero.
+If SECO SPGX11T3-C1: the -C1 means R0.1mm corner radius, NOT R0.3 or R0.8.
+
+Return ONLY raw JSON (no markdown):
+{
+  "found": true,
+  "category": "drill or milling or turning or taps or endmill or other",
+  "diameter": "exact size",
+  "shape": "insert shape code",
+  "cornerRadius": "e.g. R0.4 — always with leading zero",
+  "grade": "grade/coating code",
+  "description": "one-line description",
+  "notes": "any extra info"
+}
+If part not found after searching: {"found": false}`;
+}
+
 // ── AI VERIFY STOCK ───────────────────────────────────────────────────────────
 let verifyAborted = false;
 
@@ -1492,29 +1653,11 @@ async function startVerify() {
     logVerify(`🔎 [${i+1}/${total}] ${t.brand} ${t.partNumber}…`);
 
     try {
-      const prompt = `You are a cutting tool expert with access to manufacturer catalogs and the web.
-
-Look up this exact cutting tool and return corrected/verified data:
-Brand: ${t.brand}
-Part Number: ${t.partNumber}
-Current category: ${t.cat}
-
-Search for "${t.brand} ${t.partNumber}" on the manufacturer website or distributor catalogs.
-
-Return ONLY raw JSON (no markdown, no explanation):
-{
-  "found": true or false,
-  "category": "drill or milling or turning or taps or endmill or other",
-  "diameter": "exact size e.g. Ø13.5mm or SPGX11T3-C1",
-  "shape": "insert shape code e.g. SPGX, CNMG",
-  "cornerRadius": "e.g. R0.4 — decode from ISO code: last 2 digits × 0.1mm (04=R0.4, 08=R0.8)",
-  "grade": "e.g. T400D, IC908",
-  "description": "short one-line description e.g. Milling insert, square, 11mm",
-  "notes": "any extra useful info"
-}
-
-Critical: cornerRadius MUST use decimal format — R0.4 not R.4, R0.8 not R.8.
-If you cannot find this exact part, return {"found": false}.`;
+      const prompt = buildVerifyPrompt(
+        t.brand, t.partNumber,
+        [t.notes, t.extra?.fShape, t.extra?.fDiam].filter(Boolean).join(' | '),
+        t.diameter||'', t.shape||'', t.cornerRadius||'', t.grade||'', t.cat||''
+      );
 
       const resp = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -1600,6 +1743,7 @@ async function applyVerifyResult(t, apiData, changeLog, log) {
     return false;
   }
 
+  if (p.cornerRadius) p.cornerRadius = fixCornerRadius(t.brand, t.partNumber, p.cornerRadius);
   const catMap = { drill: 'drill', milling: 'milling', turning: 'turning', taps: 'taps', endmill: 'endmill', other: 'other' };
   const idx = tools.findIndex(x => x.id === t.id);
   if (idx < 0) return false;
@@ -1646,6 +1790,136 @@ async function applyVerifyResult(t, apiData, changeLog, log) {
     log(`  ✓ Already correct`, 'var(--green)');
     return false;
   }
+}
+
+// ── DETAIL VIEW ───────────────────────────────────────────────────────────────
+let detailToolId = null;
+
+function openDetail(id) {
+  const t = tools.find(x => x.id === id);
+  if (!t) return;
+  detailToolId = id;
+  const meta = CAT_META[t.cat] || CAT_META.other;
+  const ls = locStr(t);
+  const addedDate = t.addedAt ? new Date(t.addedAt).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const verifiedDate = t.aiVerified ? new Date(t.aiVerified).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}) : null;
+
+  function row(label, value, color='') {
+    if (!value) return '';
+    return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;flex-shrink:0;min-width:90px">${label}</div>
+      <div style="font-size:13px;text-align:right;${color?'color:'+color+';':''}">${value}</div>
+    </div>`;
+  }
+
+  const html = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${meta.color};flex-shrink:0"></div>
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">${meta.label}</div>
+      ${verifiedDate?`<div style="margin-left:auto;font-size:9px;background:rgba(34,197,94,.12);color:var(--green);padding:2px 8px;border-radius:10px">✓ AI Verified</div>`:''}
+    </div>
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:2px">${t.partNumber||'—'}</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:16px">${t.brand||'Unknown brand'}</div>
+    <div style="background:var(--bg);border-radius:12px;padding:0 12px;margin-bottom:14px">
+      ${row('Quantity', `<span style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:var(--green)">${t.qty}</span> <span style="font-size:11px;color:var(--muted)">pcs</span>`)}
+      ${row('Location', ls || '—', 'var(--accent2)')}
+      ${row('Size / Ø', t.diameter)}
+      ${row('Shape', t.shape)}
+      ${row('Corner Radius', t.cornerRadius)}
+      ${row('Grade / Coating', t.grade)}
+      ${row('Notes', t.notes)}
+      ${row('Added', addedDate)}
+      ${verifiedDate ? row('Verified', verifiedDate, 'var(--green)') : ''}
+    </div>
+  `;
+
+  document.getElementById('detailBody').innerHTML = html;
+  document.getElementById('detailModalBg').classList.add('show');
+}
+
+function closeDetailModal(e) {
+  if (!e || e.target === document.getElementById('detailModalBg'))
+    document.getElementById('detailModalBg').classList.remove('show');
+}
+
+function detailToEdit() {
+  document.getElementById('detailModalBg').classList.remove('show');
+  if (detailToolId) openEdit(detailToolId);
+}
+
+function detailToReorder() {
+  document.getElementById('detailModalBg').classList.remove('show');
+  if (detailToolId) openReorder(detailToolId);
+}
+
+// ── REORDER ───────────────────────────────────────────────────────────────────
+let reorderTool = null;
+
+function openReorder(id) {
+  const t = tools.find(x => x.id === id);
+  if (!t) return;
+  reorderTool = t;
+  document.getElementById('reorderQtyInput').value = t.qty || 1;
+  document.getElementById('reorderRepInput').value = localStorage.getItem('ts_last_rep') || '';
+  refreshReorderText();
+  // Hide share button if Web Share API not available
+  document.getElementById('reorderShareBtn').style.display = navigator.share ? 'block' : 'none';
+  document.getElementById('reorderModalBg').classList.add('show');
+}
+
+function closeReorderModal(e) {
+  if (!e || e.target === document.getElementById('reorderModalBg'))
+    document.getElementById('reorderModalBg').classList.remove('show');
+}
+
+function buildReorderText(t, qty, rep) {
+  const cat = CAT_META[t.cat] || CAT_META.other;
+  const specs = [t.diameter, t.shape, t.cornerRadius, t.grade].filter(Boolean).join(' · ');
+  const su = getSU(t.storageId);
+  const loc = locStr(t);
+  const today = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+  return [
+    rep ? `To: ${rep}` : '',
+    `Date: ${today}`,
+    '',
+    '── REORDER REQUEST ──────────────────',
+    `Brand:        ${t.brand || '—'}`,
+    `Part Number:  ${t.partNumber || '—'}`,
+    `Category:     ${cat.label}`,
+    specs ? `Specs:        ${specs}` : '',
+    t.notes ? `Notes:        ${t.notes}` : '',
+    '',
+    `Qty to order: ${qty} pcs`,
+    `Current stock: ${t.qty} pcs${loc ? ' · ' + loc : ''}`,
+    '─────────────────────────────────────',
+    '',
+    'Please confirm availability and lead time.',
+  ].filter(l => l !== null && l !== undefined && !(l === '' && false)).join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
+function refreshReorderText() {
+  if (!reorderTool) return;
+  const qty = parseInt(document.getElementById('reorderQtyInput').value) || 1;
+  const rep = document.getElementById('reorderRepInput').value.trim();
+  if (rep) localStorage.setItem('ts_last_rep', rep);
+  document.getElementById('reorderContent').textContent = buildReorderText(reorderTool, qty, rep);
+}
+
+function copyReorder() {
+  const text = document.getElementById('reorderContent').textContent;
+  navigator.clipboard.writeText(text)
+    .then(() => showToast('📋 Copied to clipboard'))
+    .catch(() => showToast('Copy failed', true));
+}
+
+function shareReorder() {
+  if (!navigator.share) return;
+  const text = document.getElementById('reorderContent').textContent;
+  const t = reorderTool;
+  navigator.share({
+    title: `Reorder: ${t.brand || ''} ${t.partNumber || ''}`,
+    text
+  }).catch(() => {});
 }
 
 // Init
