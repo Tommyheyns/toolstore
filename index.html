@@ -363,6 +363,11 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     </div>
   </div>
   <div class="settings-section">
+    <div class="settings-title">AI Stock Verification</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Cross-reference every item in your inventory against manufacturer data. AI searches the web for each part and auto-updates descriptions, sizes, and specs.</div>
+    <button class="settings-btn" id="verifyBtn" onclick="openVerifyModal()"><span class="settings-icon">🔍</span> AI Verify All Stock</button>
+  </div>
+  <div class="settings-section">
     <div class="settings-title">Danger Zone</div>
     <button class="settings-btn danger" onclick="clearAllData()"><span class="settings-icon">🗑️</span> Clear All Inventory</button>
   </div>
@@ -448,6 +453,56 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <div style="display:flex;gap:10px">
       <button onclick="goToAdjustFromInStock()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">↕ Adjust Stock</button>
       <button onclick="closeInStockModal()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;border:1px solid var(--border);cursor:pointer">OK</button>
+    </div>
+  </div>
+</div>
+<!-- AI Verify Modal -->
+<div class="modal-bg" id="verifyModalBg" onclick="closeVerifyModal(event)">
+  <div class="modal" style="max-height:92vh">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔍 AI Verify Stock</div>
+    <div class="modal-sub" id="verifySubtitle">Cross-reference every part with manufacturer data</div>
+
+    <!-- Pre-run state -->
+    <div id="verifyPreRun">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:var(--muted);line-height:1.7">
+        AI will search the web for each item using its <b style="color:var(--text)">brand + part number</b> and update:<br>
+        • Description &amp; size / diameter<br>
+        • Corner radius &amp; insert shape<br>
+        • Grade / coating<br>
+        • Category (if misclassified)
+      </div>
+      <div style="background:rgba(240,165,0,.08);border:1px solid rgba(240,165,0,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--accent);line-height:1.6">
+        ⚠️ Items without a brand or part number will be skipped.
+      </div>
+      <div id="verifyItemCount" style="font-size:13px;color:var(--text);margin-bottom:16px;text-align:center"></div>
+      <button onclick="startVerify()" style="width:100%;padding:14px;border-radius:var(--radius);background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;border:none;cursor:pointer" id="verifyStartBtn">Start Verification →</button>
+    </div>
+
+    <!-- Running state -->
+    <div id="verifyRunning" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:11px;color:var(--muted)" id="verifyProgress">0 / 0</div>
+        <div style="font-size:11px;color:var(--green)" id="verifyUpdatedCount">0 updated</div>
+      </div>
+      <div style="background:var(--surface);border-radius:8px;height:6px;margin-bottom:14px;overflow:hidden">
+        <div id="verifyBar" style="height:100%;background:var(--accent);width:0%;transition:width .4s;border-radius:8px"></div>
+      </div>
+      <div id="verifyLog" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;height:260px;overflow-y:auto;font-size:11px;font-family:'DM Mono',monospace;line-height:1.8;color:var(--muted)">
+        <div style="color:var(--accent)">Starting verification…</div>
+      </div>
+      <button onclick="cancelVerify()" id="verifyCancelBtn" style="width:100%;margin-top:12px;padding:12px;border-radius:var(--radius);background:var(--surface);color:var(--muted);font-family:'DM Mono',monospace;font-size:13px;border:1px solid var(--border);cursor:pointer">Cancel</button>
+    </div>
+
+    <!-- Done state -->
+    <div id="verifyDone" style="display:none">
+      <div style="text-align:center;padding:16px 0 8px">
+        <div style="font-size:40px;margin-bottom:8px">✅</div>
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px">Verification Complete</div>
+        <div id="verifyDoneSummary" style="font-size:13px;color:var(--muted)"></div>
+      </div>
+      <div id="verifyChangesLog" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;max-height:220px;overflow-y:auto;font-size:11px;font-family:'DM Mono',monospace;line-height:1.8;color:var(--muted);margin:12px 0"></div>
+      <button onclick="closeVerifyModal()" style="width:100%;padding:14px;border-radius:var(--radius);background:var(--green);color:#000;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer">✓ Done</button>
     </div>
   </div>
 </div>
@@ -1375,6 +1430,221 @@ function installUpdate(newHtml) {
     
   } catch(e) {
     status.textContent = 'Install failed: ' + e.message;
+  }
+}
+
+// ── AI VERIFY STOCK ───────────────────────────────────────────────────────────
+let verifyAborted = false;
+
+function openVerifyModal() {
+  const eligible = tools.filter(t => t.brand && t.partNumber);
+  document.getElementById('verifyItemCount').textContent = `${eligible.length} of ${tools.length} items eligible for verification`;
+  document.getElementById('verifyPreRun').style.display = 'block';
+  document.getElementById('verifyRunning').style.display = 'none';
+  document.getElementById('verifyDone').style.display = 'none';
+  document.getElementById('verifySubtitle').textContent = 'Cross-reference every part with manufacturer data';
+  document.getElementById('verifyModalBg').classList.add('show');
+}
+
+function closeVerifyModal(e) {
+  if (!e || e.target === document.getElementById('verifyModalBg')) {
+    document.getElementById('verifyModalBg').classList.remove('show');
+  }
+}
+
+function cancelVerify() {
+  verifyAborted = true;
+  document.getElementById('verifyCancelBtn').textContent = 'Cancelling…';
+  document.getElementById('verifyCancelBtn').disabled = true;
+}
+
+function logVerify(msg, color = '') {
+  const log = document.getElementById('verifyLog');
+  const line = document.createElement('div');
+  if (color) line.style.color = color;
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function startVerify() {
+  const apiKey = getApiKey();
+  if (!apiKey) { showToast('No API key', true); return; }
+
+  verifyAborted = false;
+  const eligible = tools.filter(t => t.brand && t.partNumber);
+  if (!eligible.length) { showToast('No items to verify', true); return; }
+
+  document.getElementById('verifyPreRun').style.display = 'none';
+  document.getElementById('verifyRunning').style.display = 'block';
+  document.getElementById('verifyLog').innerHTML = '<div style="color:var(--accent)">Starting verification…</div>';
+
+  const total = eligible.length;
+  let updated = 0;
+  const changeLog = [];
+
+  for (let i = 0; i < eligible.length; i++) {
+    if (verifyAborted) { logVerify('⛔ Cancelled by user.', 'var(--warn)'); break; }
+
+    const t = eligible[i];
+    document.getElementById('verifyProgress').textContent = `${i + 1} / ${total}`;
+    document.getElementById('verifyBar').style.width = `${Math.round(((i + 1) / total) * 100)}%`;
+    logVerify(`🔎 [${i+1}/${total}] ${t.brand} ${t.partNumber}…`);
+
+    try {
+      const prompt = `You are a cutting tool expert with access to manufacturer catalogs and the web.
+
+Look up this exact cutting tool and return corrected/verified data:
+Brand: ${t.brand}
+Part Number: ${t.partNumber}
+Current category: ${t.cat}
+
+Search for "${t.brand} ${t.partNumber}" on the manufacturer website or distributor catalogs.
+
+Return ONLY raw JSON (no markdown, no explanation):
+{
+  "found": true or false,
+  "category": "drill or milling or turning or taps or endmill or other",
+  "diameter": "exact size e.g. Ø13.5mm or SPGX11T3-C1",
+  "shape": "insert shape code e.g. SPGX, CNMG",
+  "cornerRadius": "e.g. R0.4 — decode from ISO code: last 2 digits × 0.1mm (04=R0.4, 08=R0.8)",
+  "grade": "e.g. T400D, IC908",
+  "description": "short one-line description e.g. Milling insert, square, 11mm",
+  "notes": "any extra useful info"
+}
+
+Critical: cornerRadius MUST use decimal format — R0.4 not R.4, R0.8 not R.8.
+If you cannot find this exact part, return {"found": false}.`;
+
+      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+        body: JSON.stringify({
+          model: 'gpt-4o-search-preview',
+          max_tokens: 500,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!resp.ok) {
+        if (resp.status === 429) {
+          logVerify(`  ⏳ Rate limited — waiting 8s…`, 'var(--accent)');
+          await new Promise(r => setTimeout(r, 8000));
+          i--; continue;
+        }
+        // fallback to gpt-4o without search if search model unavailable
+        if (resp.status === 404 || resp.status === 400) {
+          logVerify(`  ↩ Retrying without web search…`, 'var(--muted)');
+          const resp2 = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+            body: JSON.stringify({ model: 'gpt-4o', max_tokens: 500, messages: [{ role: 'user', content: prompt }] })
+          });
+          if (!resp2.ok) { logVerify(`  ✗ Error ${resp2.status} — skipped`, 'var(--warn)'); continue; }
+          const d2 = await resp2.json();
+          await applyVerifyResult(t, d2, changeLog, logVerify);
+          updated++;
+          document.getElementById('verifyUpdatedCount').textContent = `${updated} updated`;
+          await new Promise(r => setTimeout(r, 600));
+          continue;
+        }
+        logVerify(`  ✗ Error ${resp.status} — skipped`, 'var(--warn)');
+        continue;
+      }
+
+      const data = await resp.json();
+      const wasUpdated = await applyVerifyResult(t, data, changeLog, logVerify);
+      if (wasUpdated) {
+        updated++;
+        document.getElementById('verifyUpdatedCount').textContent = `${updated} updated`;
+      }
+
+      // Polite delay between requests
+      await new Promise(r => setTimeout(r, 1200));
+
+    } catch (err) {
+      logVerify(`  ✗ Network error — skipped`, 'var(--warn)');
+    }
+  }
+
+  // Save all changes
+  save('ts_tools', tools);
+  updateCount();
+  renderInventory();
+
+  // Show done screen
+  document.getElementById('verifyRunning').style.display = 'none';
+  document.getElementById('verifyDone').style.display = 'block';
+  document.getElementById('verifyDoneSummary').textContent = `${updated} of ${total} items updated`;
+  const cl = document.getElementById('verifyChangesLog');
+  if (changeLog.length) {
+    cl.innerHTML = changeLog.map(c => `<div style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)"><span style="color:var(--text)">${c.brand} ${c.pn}</span><br>${c.changes.join('<br>')}</div>`).join('');
+  } else {
+    cl.innerHTML = '<div style="color:var(--muted)">No changes were needed — all data looks correct.</div>';
+  }
+}
+
+async function applyVerifyResult(t, apiData, changeLog, log) {
+  const raw = apiData.choices?.[0]?.message?.content || '';
+  let p;
+  try {
+    const c = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    p = JSON.parse((c.match(/\{[\s\S]*\}/) || [c])[0]);
+  } catch {
+    log(`  ✗ Could not parse response — skipped`, 'var(--warn)');
+    return false;
+  }
+
+  if (!p.found) {
+    log(`  — Not found in manufacturer data`, 'var(--muted)');
+    return false;
+  }
+
+  const catMap = { drill: 'drill', milling: 'milling', turning: 'turning', taps: 'taps', endmill: 'endmill', other: 'other' };
+  const idx = tools.findIndex(x => x.id === t.id);
+  if (idx < 0) return false;
+
+  const changes = [];
+  const prev = tools[idx];
+
+  if (p.category && catMap[p.category] && catMap[p.category] !== prev.cat) {
+    changes.push(`  cat: ${prev.cat} → ${p.category}`);
+    tools[idx].cat = catMap[p.category];
+  }
+  if (p.diameter && p.diameter !== prev.diameter) {
+    changes.push(`  size: "${prev.diameter || '—'}" → "${p.diameter}"`);
+    tools[idx].diameter = p.diameter;
+    if (tools[idx].extra) tools[idx].extra.fDiam = p.diameter;
+  }
+  if (p.shape && p.shape !== prev.shape) {
+    changes.push(`  shape: "${prev.shape || '—'}" → "${p.shape}"`);
+    tools[idx].shape = p.shape;
+    if (tools[idx].extra) tools[idx].extra.fShape = p.shape;
+  }
+  if (p.cornerRadius && p.cornerRadius !== prev.cornerRadius) {
+    changes.push(`  radius: "${prev.cornerRadius || '—'}" → "${p.cornerRadius}"`);
+    tools[idx].cornerRadius = p.cornerRadius;
+    if (tools[idx].extra) { tools[idx].extra.fCornerRadius = p.cornerRadius; tools[idx].extra.fCorner = p.cornerRadius; }
+  }
+  if (p.grade && p.grade !== prev.grade) {
+    changes.push(`  grade: "${prev.grade || '—'}" → "${p.grade}"`);
+    tools[idx].grade = p.grade;
+  }
+  if (p.description && !prev.notes) {
+    tools[idx].notes = p.description;
+    changes.push(`  desc: "${p.description}"`);
+  }
+
+  tools[idx].aiVerified = new Date().toISOString();
+
+  if (changes.length) {
+    log(`  ✓ Updated:`, 'var(--green)');
+    changes.forEach(c => log(c, 'var(--green)'));
+    changeLog.push({ brand: t.brand, pn: t.partNumber, changes });
+    return true;
+  } else {
+    log(`  ✓ Already correct`, 'var(--green)');
+    return false;
   }
 }
 
