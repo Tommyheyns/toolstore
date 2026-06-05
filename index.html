@@ -210,38 +210,6 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 </head>
 <body>
 
-<!-- ══ INTRO SCREEN ══ -->
-<div id="introScreen" style="position:fixed;inset:0;z-index:9999;background:#0d0f14;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0">
-  <div id="introContent" style="text-align:center;opacity:0;transform:translateY(20px);transition:opacity .8s ease, transform .8s ease">
-    <!-- Animated gear/cog icon -->
-    <div id="introIcon" style="font-size:56px;margin-bottom:20px;display:block;animation:introSpin 3s ease-in-out forwards">⚙️</div>
-    <!-- TOOLSTORE text -->
-    <div style="font-family:'Syne',sans-serif;font-size:42px;font-weight:800;letter-spacing:-1px;margin-bottom:4px">
-      TOOL<span style="color:#f0a500">STORE</span>
-    </div>
-    <!-- Divider line -->
-    <div id="introDivider" style="width:0px;height:2px;background:linear-gradient(90deg,transparent,#f0a500,transparent);margin:14px auto;transition:width 1s ease .4s"></div>
-    <!-- By Entec Resources -->
-    <div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:.18em;text-transform:uppercase;margin-bottom:2px">by</div>
-    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:.1em">ENTEC RESOURCES</div>
-    <!-- Tagline -->
-    <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:10px;letter-spacing:.06em">Tool Inventory Management</div>
-  </div>
-  <!-- Loading dots -->
-  <div id="introLoader" style="position:absolute;bottom:60px;display:flex;gap:8px;opacity:0;transition:opacity .5s ease .8s">
-    <div class="intro-dot"></div>
-    <div class="intro-dot" style="animation-delay:.2s"></div>
-    <div class="intro-dot" style="animation-delay:.4s"></div>
-  </div>
-</div>
-
-<style>
-@keyframes introSpin{0%{transform:rotate(0deg) scale(.8);opacity:0}30%{transform:rotate(180deg) scale(1.1);opacity:1}60%{transform:rotate(320deg) scale(1)}100%{transform:rotate(360deg) scale(1)}}
-@keyframes introDot{0%,80%,100%{transform:scale(0.6);opacity:.3}40%{transform:scale(1);opacity:1}}
-.intro-dot{width:7px;height:7px;border-radius:50%;background:#f0a500;animation:introDot 1.2s ease-in-out infinite}
-@keyframes introFadeOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.04)}}
-</style>
-
 <header>
   <div class="logo">TOOL<span>STORE</span></div>
   <div style="text-align:right;line-height:1.3">
@@ -2491,31 +2459,7 @@ function copyReorder() {
 updateCount();
 populateStorageSelect();
 
-// ── INTRO SCREEN ──────────────────────────────────────────────────────────────
-(function(){
-  const intro = document.getElementById('introScreen');
-  const content = document.getElementById('introContent');
-  const divider = document.getElementById('introDivider');
-  const loader = document.getElementById('introLoader');
 
-  // Fade content in
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      content.style.opacity = '1';
-      content.style.transform = 'translateY(0)';
-      divider.style.width = '120px';
-      loader.style.opacity = '1';
-    }, 150);
-  });
-
-  // Fade out after 2.8s
-  setTimeout(() => {
-    intro.style.animation = 'introFadeOut .6s ease forwards';
-    setTimeout(() => {
-      intro.style.display = 'none';
-    }, 600);
-  }, 4000);
-})();
 </script>
 </body>
 </html>
