@@ -292,6 +292,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <div class="field-group">
       <div class="field"><label>Brand</label><select id="fBrand" onchange="handleBrandChange()"></select><div class="new-brand-row" id="newBrandRow"><input type="text" id="newBrandInput" placeholder="Type brand name…" oninput="saveNewBrand()"></div></div>
       <div class="field"><label>Part Number</label><input type="text" id="fPart" placeholder="e.g. SPGX11T3-C1"></div>
+      <div class="field"><label>Description</label><input type="text" id="fDesc" placeholder="e.g. Solid carbide end mill Ø12mm 4-flute"></div>
       <div id="catFields"></div>
       <div class="field-row">
         <div class="field"><label>Grade / Coating</label><input type="text" id="fGrade" placeholder="e.g. T400D"></div>
@@ -485,6 +486,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <input type="hidden" id="editToolId">
     <div class="edit-field"><label>Brand</label><select id="eBrand" onchange="handleEditBrandChange()"></select><div class="new-brand-row" id="eNewBrandRow"><input type="text" id="eNewBrandInput" placeholder="Type brand name…"></div></div>
     <div class="edit-field"><label>Part Number</label><input type="text" id="ePart"></div>
+    <div class="edit-field"><label>Description</label><input type="text" id="eDesc" placeholder="Plain English description"></div>
     <div class="edit-field"><label>Size / Diameter</label><input type="text" id="eDiam"></div>
     <div class="edit-field"><label>Grade / Coating</label><input type="text" id="eGrade"></div>
     <div class="edit-field"><label>Quantity (pcs)</label><input type="number" id="eQty" min="0"></div>
@@ -701,12 +703,13 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <script>
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const CAT_META={
-  drill:  {icon:'🔵',label:'Drill Inserts',  color:'#3b82f6'},
-  milling:{icon:'🟡',label:'Milling Inserts', color:'#eab308'},
-  turning:{icon:'🟠',label:'Turning Inserts', color:'#f97316'},
-  taps:   {icon:'🟢',label:'Taps',            color:'#22c55e'},
-  endmill:{icon:'🔴',label:'End Mills',       color:'#ef4444'},
-  other:  {icon:'⚪',label:'Other',           color:'#6b7899'},
+  drill:       {icon:'🔵',label:'Drill Inserts',   color:'#3b82f6'},
+  milling:     {icon:'🟡',label:'Milling Inserts',  color:'#eab308'},
+  turning:     {icon:'🟠',label:'Turning Inserts',  color:'#f97316'},
+  taps:        {icon:'🟢',label:'Taps',             color:'#22c55e'},
+  endmill:     {icon:'🔴',label:'End Mills',        color:'#ef4444'},
+  drill_holder:{icon:'🔧',label:'Drill Holders',    color:'#8b5cf6'},
+  other:       {icon:'⚪',label:'Other',            color:'#6b7899'},
 };
 const CAT_KEYS=Object.keys(CAT_META);
 const DEFAULT_BRANDS=['Gühring','ISCAR','SECO','Sandvik Coromant','Kennametal','Walter','Mitsubishi','Sumitomo','Kyocera'];
@@ -1073,7 +1076,75 @@ async function analyseImage(){
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
       body:JSON.stringify({model:'gpt-4o',max_tokens:700,messages:[{role:'user',content:[
         {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
-        {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from ISO code last 2 digits or label","extraField1":"pitch for taps / flutes for endmills","extraField2":"tap type","notes":"EDP, lot, barcode ref","qty":1,"confidence":"high or medium or low"}\n\nSet categoryConfidence=uncertain ONLY when you genuinely cannot tell if an insert is milling vs turning (e.g. CN/BN shapes that could be used in either a face mill body or a lathe tool). In all other cases set categoryConfidence=certain.\n\n=== BRAND IDENTIFICATION ===\nISCAR: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT → brand=ISCAR\nSECO: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D/TP2500/MF5 → brand=SECO\nGühring: 4112, 4115, 4229, 5516, 5525, 5537, 5735, RT100, SL-RATIOFRAESER → brand=Gühring\nBIG Daishowa: CN, BN prefix or label says BIG DAISHOWA SEIKI → brand=BIG Daishowa\n\n=== GÜHRING SPECIFIC ===\nGühring labels use German: A=diameter, Stück=pieces, SL-RATIOFRAESER=end mill\nPart numbers 5735, 5516, 5525, 5537, 5262 = solid carbide end mills → category=end_mill\nOn Gühring labels diameter is shown as e.g. A 12,0 — the number after A is the diameter in mm\nDIN 6527L = 4-flute solid carbide end mill\nDIN 6535 = end mill shank standard\n\n=== ISCAR SPECIFIC ===\nICP, ICM, HCP, IDI = drill inserts (go in Sumocham/Chamdrill drill body) → category=drill_insert\nSPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG = turning inserts → category=turning_insert\nGrades: IC908, IC528, IC830, IC807 = ISCAR\n\n=== SECO SPECIFIC ===\nSPGX, RPHT, RCMT, RCGX = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT = turning inserts → category=turning_insert\nSD, MDN, MEGA prefix = drills/end mills\nGrades: T400D, TP2500, TP1500, MF5 = SECO\n\n=== BIG DAISHOWA SPECIFIC ===\nCN prefix inserts (e.g. CN0906) used in face mill bodies → categoryConfidence=uncertain (could be milling or turning)\nBN prefix = ball nose inserts\nGrade ACM250F, ACM300 = BIG Daishowa\n\n=== CATEGORY RULES ===\nDRILL INSERT: ICP, ICM, HCP, IDI, Gühring 4112/4115/4229. Always have cutting diameter. Go into drill body.\nMILLING INSERT: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT, RCMT. Round/square/octagonal.\nTURNING INSERT: Lathe/boring bar inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG. Triangle/diamond/rhombic.\nTAP: ONLY if thread designation shown e.g. M6x1.0, M10x1.5, UNC, UNF. Never confuse with end mills.\nEND MILL: Solid carbide, has flutes. Gühring 5735/5516/5525/5537, SL-RATIOFRAESER, slot drills, ball nose, corner radius mills. 2-flute slot drills = end_mill.\nOTHER: reamers, boring bars, indexable drills (not insert), anything else.\n\n=== ISO CORNER RADIUS ===\nISO code last 2 digits = corner radius x 0.1mm: 02=R0.2, 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6\nGühring end mills: read corner radius from label (R-RF1 = sharp corner/no radius)\n\nBe exact with part numbers and diameters. Use web knowledge for unknown brands.`}
+        {type:'text',text:`You are a machining tool identification expert. Read this cutting tool label carefully.
+
+STEP 1 — Read all visible text exactly as printed.
+STEP 2 — Identify brand and category using the reference below.
+STEP 3 — If uncertain about any field, use your web knowledge to look up the part number.
+
+Return ONLY raw JSON, no markdown:
+{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or drill_holder or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"","extraField1":"flutes for endmills / pitch for taps","extraField2":"tap type","description":"plain English description e.g. Solid carbide end mill Ø12mm 4-flute or Indexable drill holder 15.5-15.9mm or HSS machine tap 1/16 NPT","notes":"K/P ref, EDP, barcode","qty":1,"confidence":"high or medium or low"}
+
+=== GÜHRING GERMAN LABEL DECODER ===
+SL-RATIOFRAESER = solid carbide end mill → category=end_mill
+WINKELFRAESER = angle/dovetail/chamfer cutter → category=other, description="Angle/dovetail cutter"
+GEWINDEBOHRER = thread tap → category=tap
+WECHSELPLATTENHALTER = indexable insert drill holder/body → category=drill_holder, description="Indexable drill holder"
+KUGELFRAESER = ball nose end mill → category=end_mill
+SCHAFTFRAESER = end mill → category=end_mill
+SPIRALBOHRER = twist drill → category=other
+
+Gühring part number series:
+5735, 5562, 5516, 5525, 5537, 5514, 5262 = end mills → category=end_mill
+3574 = angle/dovetail cutter → category=other
+4108, 4111, 4112 prefix = drill holder/body → category=drill_holder
+973, 5007 = taps (GEWINDEBOHRER) → category=tap
+4112, 4115, 4229 suffix series = drill INSERTS (not holders) → category=drill_insert
+
+German diameter notation: "A 12,0" or "Ø 12,0" or "C 12,0" — the number (with comma as decimal) = diameter in mm
+"FUER 12,500-12,999" = holder fits inserts in that diameter range
+"GRAD" = degrees (angle)
+WN = German standard (Werknorm)
+DIN = German industrial standard
+HSCO = HSS-Co cobalt high speed steel
+K/P = Gühring catalog reference number
+
+=== BRAND IDENTIFICATION ===
+ISCAR: ICP, ICM, HCP, IDI, APKT, SEHT, OFMT, XOEX → brand=ISCAR
+SECO: SPGX, RPHT, RCMT, RCGX, grades T400D/TP2500/MF5 → brand=SECO
+Gühring: 4112, 4115, 4229, 5514, 5516, 5525, 5537, 5562, 5735, 3574, 4108, 973, 5007, RT100, yellow label → brand=Gühring
+BIG Daishowa: CN/BN prefix, ACM grades, blue packaging → brand=BIG Daishowa
+Kyocera / Magic Drill: "Magic Drill" text, DRZ/DRA series, S##-DRZ prefix → brand=Kyocera, description="Indexable drill body"
+
+=== CATEGORY RULES ===
+drill_insert: Indexable tips that go INTO a drill body. ICP, ICM, HCP, IDI, Gühring 4112/4115/4229 inserts. Have a cutting diameter.
+milling_insert: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT. Round/square/octagonal shape.
+turning_insert: Lathe/boring inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG.
+drill_holder: The drill BODY/HOLDER that accepts inserts. Gühring 4108 series, Magic Drill DRZ body, WECHSELPLATTENHALTER. NOT an insert itself.
+tap: Thread cutting tool. GEWINDEBOHRER. Thread designation: M6x1.0, M10x1.5, NPT, BSPT, BSP, G, UNC, UNF. Pipe threads: 1/16 NPT, 1/8 BSPT etc.
+end_mill: Solid carbide milling cutter with flutes. Gühring 5xxx series, SL-RATIOFRAESER, slot drills, ball nose.
+other: Angle cutters (WINKELFRAESER), reamers, boring bars, twist drills, chamfer mills, anything else.
+
+=== PART NUMBER MATCHING — CRITICAL ===
+Part numbers MUST match exactly including ALL suffixes and digits.
+e.g. 5735-12,000 and 5735-12,001 are DIFFERENT tools (different coating/grade).
+Never consider two tools the same if their full part numbers differ in any digit.
+
+=== ISO CORNER RADIUS ===
+Last 2 digits of ISO insert code × 0.1mm: 04=R0.4, 08=R0.8, 12=R1.2, 02=R0.2
+R-RF1 = sharp corner, R-RT1 = sharp corner
+
+=== DESCRIPTION FIELD ===
+Always fill description with a clear plain English label:
+- "Solid carbide end mill Ø12.0mm 4-flute" 
+- "Indexable drill holder for Ø15.5-15.9mm inserts"
+- "HSS-Co machine tap 1/16 NPT pipe thread"
+- "Angle/dovetail cutter 60° Ø16mm HSS-Co"
+- "Kyocera Magic Drill indexable drill body S25 shank"
+- "ISCAR Sumocham drill insert Ø13.5mm IC908"
+
+Set categoryConfidence=uncertain ONLY when genuinely unsure between milling and turning inserts.
+Be exact with part numbers — copy every digit, comma, and dash exactly as printed.`}
       ]}]})
     });
     clearInterval(ticker);
@@ -1089,7 +1160,7 @@ async function analyseImage(){
     let p;try{const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
     catch{p={category:'other',brand:'',partNumber:'',diameter:'',shape:'',grade:'',notes:'',qty:1,confidence:'low'};}
 
-    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',other:'other'};
+    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',drill_holder:'drill_holder',other:'other'};
     currentCat=catMap[p.category]||'other';
     renderCatTags();renderCatFields();
 
@@ -1141,7 +1212,14 @@ async function analyseForAdjust(){
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
       body:JSON.stringify({model:'gpt-4o',max_tokens:300,messages:[{role:'user',content:[
         {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
-        {type:'text',text:`Read this cutting tool label. If brand not visible, identify from part number.\n\nISCAR codes: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, CNMG, TNMG, DCMT etc → brand=ISCAR\nSECO codes: SPGX, RPHT, RCMT, grades T400D/TP2500 → brand=SECO\nGühring: 4112, 4115, 4229 → brand=Gühring\n\nReturn ONLY raw JSON:\n{"brand":"","partNumber":"","diameter":"","grade":""}\nBe exact with the part number.`}
+        {type:'text',text:`Read this cutting tool label for stock lookup. Extract exact part number — every digit, dash, comma matters (e.g. 5735-12,000 ≠ 5735-12,001).
+
+GEWINDEBOHRER=tap, SL-RATIOFRAESER=end mill, WECHSELPLATTENHALTER=drill holder, WINKELFRAESER=angle cutter
+Gühring=yellow label, ISCAR: ICP/ICM/HCP/IDI, SECO grades: T400D/TP2500, Magic Drill=Kyocera
+
+Return ONLY raw JSON:
+{"brand":"","partNumber":"exact full part number including all digits","diameter":"","grade":""}
+Copy part number exactly as printed.`}
       ]}]})
     });
     clearInterval(ticker);
@@ -1167,17 +1245,17 @@ function findAndShowMatches(p){
   const dm=(p.diameter||'').replace(/[^\d.]/g,'');
   const scored=tools.map(t=>{
     let score=0;
-    const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+    // Keep dashes for part number matching — 5735-12,000 vs 5735-12,001 must NOT match
+    const tpn=(t.partNumber||'').toLowerCase().replace(/\s/g,'');
+    const spn=pn.replace(/\s/g,'');
     const tbr=(t.brand||'').toLowerCase();
     const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
-    if(pn&&tpn&&tpn===pn)score+=100;
-    else if(pn&&tpn&&(tpn.includes(pn)||pn.includes(tpn)))score+=60;
+    if(spn&&tpn&&tpn===spn)score+=100; // exact match only for part number
     if(br&&tbr&&(tbr.includes(br)||br.includes(tbr)))score+=20;
-    if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.1)score+=30;
-    else if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.5)score+=10;
-    if(p.grade&&t.grade&&t.grade.toLowerCase()===p.grade.toLowerCase())score+=15;
+    if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.1)score+=15;
+    if(p.grade&&t.grade&&t.grade.toLowerCase()===p.grade.toLowerCase())score+=10;
     return{tool:t,score};
-  }).filter(x=>x.score>=20).sort((a,b)=>b.score-a.score).slice(0,5);
+  }).filter(x=>x.score>=100).sort((a,b)=>b.score-a.score).slice(0,5);
 
   adjSelectedId=null;
   document.getElementById('adjQtySection').style.display='none';
@@ -1190,7 +1268,7 @@ function findAndShowMatches(p){
   }else{
     hdr.textContent=scored[0].score>=100?'✓ Exact Match Found':`${scored.length} Match${scored.length>1?'es':''} Found`;
     el.innerHTML=scored.map(({tool:t})=>{
-      const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+      const sub=[t.description||[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ')].filter(Boolean).join(' · ');
       const loc=locStr(t)||'No location set';
       return`<div class="adj-item" id="adj-${t.id}" onclick="selectAdjItem(${t.id})">
         <div class="adj-pn">${t.brand||''} ${t.partNumber}</div>
@@ -1269,6 +1347,7 @@ function submitTool(){
     id:Date.now(),cat:currentCat,brand,
     partNumber:pn,diameter:extra.fDiam||'',shape:extra.fShape||'',
     cornerRadius:extra.fCornerRadius||extra.fCorner||'',
+    description:document.getElementById('fDesc')?.value||'',
     grade:document.getElementById('fGrade').value,
     qty:parseInt(document.getElementById('fQty').value)||1,
     notes:document.getElementById('fNotes').value,
@@ -1311,7 +1390,7 @@ function renderInventory(){
     const meta=CAT_META[c]||CAT_META.other;
     html+=`<div class="inv-group"><div class="inv-group-title">${meta.icon} ${meta.label}<span class="inv-group-count">${items.length}</span></div>`;
     items.sort((a,b)=>(a.brand||'').localeCompare(b.brand||'')).forEach(t=>{
-      const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+      const sub=[t.description||[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ')].filter(Boolean).join(' · ');
       const ls=locStr(t);
       html+=`<div class="inv-item" onclick="openDetail(${t.id})" style="cursor:pointer">
         <div class="cat-dot" style="background:${meta.color}"></div>
@@ -1467,6 +1546,7 @@ function openEdit(id){
   document.getElementById('editToolId').value=id;
   populateBrandSelect('eBrand',t.brand);
   document.getElementById('ePart').value=t.partNumber||'';
+  const edEl=document.getElementById('eDesc');if(edEl)edEl.value=t.description||'';
   document.getElementById('eDiam').value=t.diameter||'';
   document.getElementById('eGrade').value=t.grade||'';
   document.getElementById('eQty').value=t.qty||1;
@@ -1497,6 +1577,7 @@ function saveEdit(){
   }
   tools[idx]={...tools[idx],brand,
     partNumber:document.getElementById('ePart').value.trim(),
+    description:document.getElementById('eDesc')?.value.trim()||'',
     diameter:document.getElementById('eDiam').value.trim(),
     grade:document.getElementById('eGrade').value.trim(),
     qty:parseInt(document.getElementById('eQty').value)||0,
@@ -1641,6 +1722,7 @@ function fillAIResult(p){
     if(!found&&p.brand){const opt=document.createElement('option');opt.value=p.brand;opt.text=p.brand;opt.selected=true;brandSel.insertBefore(opt,brandSel.firstChild);brandSel.value=p.brand;}
   }
   document.getElementById('fPart').value=p.partNumber||'';
+  const fdEl=document.getElementById('fDesc');if(fdEl)fdEl.value=p.description||'';
   document.getElementById('fGrade').value=p.grade||'';
   document.getElementById('fQty').value=p.qty||1;
   document.getElementById('fNotes').value=p.notes||'';
@@ -1670,11 +1752,13 @@ function fillAIResult(p){
   const pnCheck=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
   const brCheck=(p.brand||'').toLowerCase();
   const dmCheck=(p.diameter||'').replace(/[^\d.]/g,'');
+  // Strict match: full part number must match exactly (including suffix/coating variant)
   const inStockMatch=tools.find(t=>{
-    const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+    const tpn=(t.partNumber||'').toLowerCase().replace(/\s/g,'');
+    const spn=pnCheck.replace(/\s/g,'');
+    if(!spn||!tpn||tpn!==spn) return false; // exact part number required
     const tbr=(t.brand||'').toLowerCase();
-    const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
-    return pnCheck&&tpn&&tpn===pnCheck&&(!brCheck||tbr.includes(brCheck)||brCheck.includes(tbr))&&(!dmCheck||!tdm||Math.abs(parseFloat(dmCheck)-parseFloat(tdm))<0.2);
+    return !brCheck||tbr.includes(brCheck)||brCheck.includes(tbr);
   });
   if(inStockMatch){
     inStockMatchedTool=inStockMatch;
@@ -2425,7 +2509,7 @@ populateStorageSelect();
     setTimeout(() => {
       intro.style.display = 'none';
     }, 600);
-  }, 2800);
+  }, 4000);
 })();
 </script>
 </body>
