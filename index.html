@@ -17,7 +17,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 .logo span{color:var(--accent)}
 .hdr-count{font-size:11px;color:var(--muted)}
 .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:99}
-.tab{flex:1;padding:12px 4px;text-align:center;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .2s}
+.tab{flex:1;padding:8px 2px;text-align:center;font-size:9px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .2s;line-height:1.4}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .page{display:none;padding:16px 16px 120px}
 .page.active{display:block}
@@ -209,6 +209,39 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 </style>
 </head>
 <body>
+
+<!-- ══ INTRO SCREEN ══ -->
+<div id="introScreen" style="position:fixed;inset:0;z-index:9999;background:#0d0f14;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0">
+  <div id="introContent" style="text-align:center;opacity:0;transform:translateY(20px);transition:opacity .8s ease, transform .8s ease">
+    <!-- Animated gear/cog icon -->
+    <div id="introIcon" style="font-size:56px;margin-bottom:20px;display:block;animation:introSpin 3s ease-in-out forwards">⚙️</div>
+    <!-- TOOLSTORE text -->
+    <div style="font-family:'Syne',sans-serif;font-size:42px;font-weight:800;letter-spacing:-1px;margin-bottom:4px">
+      TOOL<span style="color:#f0a500">STORE</span>
+    </div>
+    <!-- Divider line -->
+    <div id="introDivider" style="width:0px;height:2px;background:linear-gradient(90deg,transparent,#f0a500,transparent);margin:14px auto;transition:width 1s ease .4s"></div>
+    <!-- By Entec Resources -->
+    <div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:.18em;text-transform:uppercase;margin-bottom:2px">by</div>
+    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:.1em">ENTEC RESOURCES</div>
+    <!-- Tagline -->
+    <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:10px;letter-spacing:.06em">Tool Inventory Management</div>
+  </div>
+  <!-- Loading dots -->
+  <div id="introLoader" style="position:absolute;bottom:60px;display:flex;gap:8px;opacity:0;transition:opacity .5s ease .8s">
+    <div class="intro-dot"></div>
+    <div class="intro-dot" style="animation-delay:.2s"></div>
+    <div class="intro-dot" style="animation-delay:.4s"></div>
+  </div>
+</div>
+
+<style>
+@keyframes introSpin{0%{transform:rotate(0deg) scale(.8);opacity:0}30%{transform:rotate(180deg) scale(1.1);opacity:1}60%{transform:rotate(320deg) scale(1)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes introDot{0%,80%,100%{transform:scale(0.6);opacity:.3}40%{transform:scale(1);opacity:1}}
+.intro-dot{width:7px;height:7px;border-radius:50%;background:#f0a500;animation:introDot 1.2s ease-in-out infinite}
+@keyframes introFadeOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.04)}}
+</style>
+
 <header>
   <div class="logo">TOOL<span>STORE</span></div>
   <div style="text-align:right;line-height:1.3">
@@ -217,10 +250,10 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   </div>
 </header>
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('scan')">📷 Scan</button>
-  <button class="tab" onclick="switchTab('inventory')">📋 Stock</button>
-  <button class="tab" onclick="switchTab('storage')">🗄️ Storage</button>
-  <button class="tab" onclick="switchTab('settings')">⚙️ Settings</button>
+  <button class="tab active" onclick="switchTab('scan')">📷<br>Scan</button>
+  <button class="tab" onclick="switchTab('inventory')">📋<br>Stock</button>
+  <button class="tab" onclick="switchTab('storage')">🗄️<br>Storage</button>
+  <button class="tab" onclick="switchTab('settings')">⚙️<br>Settings</button>
 </div>
 
 <!-- ══ SCAN ══ -->
@@ -265,6 +298,12 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
         <div class="field"><label>Qty (pcs)</label><input type="number" id="fQty" value="1" min="1"></div>
       </div>
       <div class="field"><label>Notes</label><input type="text" id="fNotes" placeholder="EDP, lot, barcode…"></div>
+      <div class="field">
+        <label>Supplier</label>
+        <select id="fSupplier">
+          <option value="">— None —</option>
+        </select>
+      </div>
     </div>
     <!-- Dynamic location picker -->
     <div class="loc-section">
@@ -324,9 +363,11 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 
 <!-- ══ STORAGE ══ -->
 <div class="page" id="page-storage">
-  <div class="storage-header">
-    <select class="storage-select" id="storageUnitSelect" onchange="renderStorageView()"></select>
+  <div class="storage-header" style="display:flex;gap:8px;align-items:center">
+    <select class="storage-select" id="storageUnitSelect" onchange="renderStorageView()" style="flex:1"></select>
+    <button onclick="openAddStorageModal()" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700">➕ Unit</button>
   </div>
+  <div id="storageUnitListInline" style="margin-bottom:8px"></div>
   <div id="storageView"></div>
 </div>
 
@@ -340,6 +381,10 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <div class="settings-section">
     <div class="settings-title">API</div>
     <button class="settings-btn" onclick="resetApiKey()"><span class="settings-icon">🔑</span> Reset OpenAI API Key</button>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">Contacts</div>
+    <button class="settings-btn" onclick="openContactsModal()"><span class="settings-icon">👥</span> Procurement &amp; Suppliers</button>
   </div>
   <div class="settings-section">
     <div class="settings-title">Custom Brands</div>
@@ -399,11 +444,33 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
         <div class="type-btn" id="type-drawers" onclick="selectStorageType('drawers')"><span class="type-btn-icon">🗃️</span><div class="type-btn-name">Drawers</div></div>
       </div>
     </div>
-    <div class="edit-field"><label id="suCountLabel">Number of Bins</label><input type="number" id="suCount" value="48" min="1" max="200"></div>
-    <div id="suSectionRow" class="edit-field">
-      <label>Sections per Bin</label>
-      <select id="suSections"><option value="1">None (no sections)</option><option value="2" selected>A + B</option><option value="3">A + B + C</option></select>
+
+    <!-- Bins options -->
+    <div id="suBinsOptions">
+      <div class="edit-field"><label>Number of Bins</label><input type="number" id="suCount" value="48" min="1" max="200"></div>
+      <div class="edit-field" id="suSectionRow">
+        <label>Sections per Bin</label>
+        <select id="suSections"><option value="1">None (no sections)</option><option value="2" selected>A + B</option><option value="3">A + B + C</option></select>
+      </div>
     </div>
+
+    <!-- Shelves options -->
+    <div id="suShelvesOptions" style="display:none">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Give each shelf/slot a custom name — e.g. "Top Shelf", "Big Tub", "Parts Drawer".</div>
+      <div class="edit-field"><label>Number of Slots</label><input type="number" id="suShelfCount" value="6" min="1" max="50" oninput="renderShelfLabelInputs()"></div>
+      <div id="suShelfLabels" style="display:flex;flex-direction:column;gap:7px;margin-top:8px"></div>
+    </div>
+
+    <!-- Drawers options -->
+    <div id="suDrawersOptions" style="display:none">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Set how many drawers, then rows and columns inside each drawer. Each cell gets a location like D1·R2·C3.</div>
+      <div class="edit-field"><label>Number of Drawers</label><input type="number" id="suDrawerCount" value="6" min="1" max="30"></div>
+      <div class="field-row" style="padding:0;margin-bottom:10px">
+        <div class="edit-field"><label>Rows per Drawer</label><input type="number" id="suDrawerRows" value="2" min="1" max="10"></div>
+        <div class="edit-field"><label>Columns per Drawer</label><input type="number" id="suDrawerCols" value="4" min="1" max="20"></div>
+      </div>
+    </div>
+
     <div class="edit-field"><label>Description (optional)</label><input type="text" id="suDesc" placeholder="e.g. 48-bin PTB cabinet, drill inserts"></div>
     <button class="edit-save" onclick="saveStorageUnit()">✓ Save</button>
     <button class="modal-close" onclick="closeAddStorageModal()" style="margin-top:8px">Cancel</button>
@@ -421,8 +488,19 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <div class="edit-field"><label>Size / Diameter</label><input type="text" id="eDiam"></div>
     <div class="edit-field"><label>Grade / Coating</label><input type="text" id="eGrade"></div>
     <div class="edit-field"><label>Quantity (pcs)</label><input type="number" id="eQty" min="0"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1"><label style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:5px">Min Qty ⚠️</label><input type="number" id="eMinQty" min="0" placeholder="e.g. 5" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none"></div>
+      <div style="flex:1"><label style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:5px">Max Qty 📦</label><input type="number" id="eMaxQty" min="0" placeholder="e.g. 20" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none"></div>
+    </div>
+
     <div class="edit-field"><label>Location</label><div id="editLocRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div></div>
     <div class="edit-field"><label>Notes</label><input type="text" id="eNotes"></div>
+    <div class="edit-field">
+      <label>Supplier</label>
+      <select id="eSupplier" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;-webkit-appearance:none">
+        <option value="">— None —</option>
+      </select>
+    </div>
     <button class="edit-save" onclick="saveEdit()">✓ Save Changes</button>
     <button class="edit-delete" onclick="deleteToolFromEdit()">🗑 Delete This Item</button>
     <button class="modal-close" onclick="closeEditModal()" style="margin-top:8px">Cancel</button>
@@ -506,6 +584,77 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     </div>
   </div>
 </div>
+<!-- Contacts Modal -->
+<div class="modal-bg" id="contactsModalBg" onclick="closeContactsModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👥 Contacts</div>
+    <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Procurement</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px">
+      <div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Manager Name</div>
+        <input type="text" id="procName" placeholder="e.g. John Smith" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Email — To</div>
+        <input type="email" id="procEmail" placeholder="procurement@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Email — CC (optional)</div>
+        <input type="email" id="procCC" placeholder="manager@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Suppliers</div>
+    <div id="supplierList" style="margin-bottom:10px"></div>
+    <button class="settings-btn" onclick="openSupplierModal()" style="margin-bottom:10px"><span class="settings-icon">➕</span> Add Supplier</button>
+    <button onclick="closeContactsModal()" class="modal-close">Done</button>
+  </div>
+</div>
+
+<!-- Supplier Modal -->
+<div class="modal-bg" id="supplierModalBg" onclick="closeSupplierModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="supplierModalTitle">Add Supplier</div>
+    <input type="hidden" id="supplierEditId">
+    <div class="edit-field" style="margin-bottom:10px">
+      <label style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:5px">Company Name</label>
+      <input type="text" id="sCompany" placeholder="e.g. Seco Tools Australia" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none">
+    </div>
+    <div class="edit-field" style="margin-bottom:10px">
+      <label style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:5px">Rep Name</label>
+      <input type="text" id="sRep" placeholder="e.g. Dave Johnson" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none">
+    </div>
+    <div class="edit-field" style="margin-bottom:10px">
+      <label style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:5px">Rep Email</label>
+      <input type="email" id="sEmail" placeholder="dave@secotools.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none">
+    </div>
+    <div class="edit-field" style="margin-bottom:10px">
+      <label style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:5px">Phone (optional)</label>
+      <input type="tel" id="sPhone" placeholder="e.g. 0400 000 000" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none">
+    </div>
+    <button onclick="saveSupplier()" style="width:100%;padding:13px;border-radius:var(--radius);background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer;margin-bottom:8px">✓ Save Supplier</button>
+    <button onclick="closeSupplierModal()" class="modal-close">Cancel</button>
+  </div>
+</div>
+
+<!-- Low Stock Warning Modal -->
+<div class="modal-bg" id="lowStockModalBg">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="text-align:center;padding:8px 0 4px">
+      <div style="font-size:36px;margin-bottom:6px">⚠️</div>
+      <div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:4px">Low Stock Alert</div>
+      <div id="lowStockMsg" style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px"></div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px">
+      <div id="lowStockDetail" style="font-size:12px;font-family:'DM Mono',monospace;line-height:2;color:var(--text)"></div>
+    </div>
+    <button onclick="lowStockRequestStock()" style="width:100%;padding:14px;border-radius:var(--radius);background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer;margin-bottom:8px">📧 Request Stock</button>
+    <button onclick="closeLowStockModal()" style="width:100%;padding:13px;border-radius:var(--radius);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;border:1px solid var(--border);cursor:pointer">OK — Acknowledged</button>
+  </div>
+</div>
+
 <!-- Detail View Modal -->
 <div class="modal-bg" id="detailModalBg" onclick="closeDetailModal(event)">
   <div class="modal">
@@ -523,24 +672,27 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <div class="modal-bg" id="reorderModalBg" onclick="closeReorderModal(event)">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">📋 Reorder Info</div>
-    <div class="modal-sub">Send this to your rep to order the right part</div>
-    <div id="reorderContent" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 15px;font-family:'DM Mono',monospace;font-size:12px;line-height:2;margin-bottom:14px;white-space:pre-wrap;color:var(--text)"></div>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <button onclick="copyReorder()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">📋 Copy to Clipboard</button>
-      <button onclick="shareReorder()" id="reorderShareBtn" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">↗ Share</button>
+    <div class="modal-title">📋 Reorder Request</div>
+    <div class="modal-sub" id="reorderModalSub">For your procurement manager</div>
+    <div id="reorderSupplierBar" style="display:none;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:10px 13px;margin-bottom:12px;font-size:12px;font-family:'DM Mono',monospace;line-height:1.9;color:var(--text)"></div>
+    <div id="reorderContent" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 15px;font-family:'DM Mono',monospace;font-size:12px;line-height:2;margin-bottom:12px;white-space:pre-wrap;color:var(--text)"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="emailReorder()" id="reorderEmailBtn" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">📧 Email Manager</button>
+      <button onclick="copyReorder()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:1px solid var(--border);cursor:pointer">📋 Copy</button>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
       <div style="flex:1">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase">Reorder Qty</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase">Qty to Order</div>
         <input type="number" id="reorderQtyInput" value="1" min="1" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;outline:none" oninput="refreshReorderText()">
       </div>
-      <div style="flex:2">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase">Rep / Supplier Name</div>
-        <input type="text" id="reorderRepInput" placeholder="e.g. Seco Tools Australia" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none" oninput="refreshReorderText()">
+      <div style="flex:2" id="reorderSupplierPick">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase">Supplier</div>
+        <select id="reorderSupplierSel" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none" onchange="refreshReorderText()">
+          <option value="">— None —</option>
+        </select>
       </div>
     </div>
-    <button onclick="closeReorderModal()" class="modal-close" style="margin-top:12px">Close</button>
+    <button onclick="closeReorderModal()" class="modal-close" style="margin-top:4px">Close</button>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -597,12 +749,23 @@ tools=tools.map(t=>{
 function getSU(id){return storageUnits.find(s=>s.id===id);}
 function locStr(t){
   if(!t.storageId)return '';
-  const su=getSU(t.storageId);
-  if(!su)return '';
-  const tm=TYPE_META[su.type]||TYPE_META.bins;
-  const slot=t.bin?`${tm.slotLabel} ${t.bin}`:'';
-  const sec=su.type==='bins'&&t.section?` · ${t.section}`:'';
-  return `${su.name}${slot?' · '+slot:''}${sec}`;
+  const su=getSU(t.storageId);if(!su)return '';
+  if(su.type==='bins'){
+    const slot=t.bin?`Bin ${t.bin}`:'';
+    const sec=t.section?` · ${t.section}`:'';
+    return `${su.name}${slot?' · '+slot:''}${sec}`;
+  } else if(su.type==='shelves'){
+    // bin field stores slot index (1-based), use slotLabels if available
+    const idx=parseInt(t.bin)-1;
+    const label=su.slotLabels&&su.slotLabels[idx]?su.slotLabels[idx]:`Slot ${t.bin}`;
+    return t.bin?`${su.name} · ${label}`:su.name;
+  } else if(su.type==='drawers'){
+    // bin=drawer num, section=R{row}C{col}
+    const d=t.bin?`Drawer ${t.bin}`:'';
+    const rc=t.section?` · ${t.section}`:'';
+    return `${su.name}${d?' · '+d:''}${rc}`;
+  }
+  return su.name;
 }
 
 // ── MODE ──────────────────────────────────────────────────────────────────────
@@ -652,14 +815,29 @@ function renderLocPicker(containerId, currentStorageId='', currentBin='', curren
   const su=getSU(currentStorageId);
   let slotSel='',secSel='';
   if(su){
-    const tm=TYPE_META[su.type]||TYPE_META.bins;
-    slotSel=`<div class="loc-field"><div class="loc-field-label">${tm.slotLabel}</div><input class="loc-sel" type="number" id="${containerId}_bin" min="1" max="${su.count}" placeholder="—" style="width:65px" value="${currentBin}"></div>`;
-    if(su.type==='bins'&&su.sections>1){
-      const opts=['','A','B'];
-      if(su.sections>=3)opts.push('C');
-      secSel=`<div class="loc-field"><div class="loc-field-label">Section</div><select class="loc-sel" id="${containerId}_sec" style="width:65px">
-        ${opts.map(o=>`<option value="${o}"${o===currentSection?' selected':''}>${o||'—'}</option>`).join('')}
+    if(su.type==='bins'){
+      slotSel=`<div class="loc-field"><div class="loc-field-label">Bin</div><input class="loc-sel" type="number" id="${containerId}_bin" min="1" max="${su.count}" placeholder="—" style="width:65px" value="${currentBin}"></div>`;
+      if(su.sections>1){
+        const opts=['','A','B'];if(su.sections>=3)opts.push('C');
+        secSel=`<div class="loc-field"><div class="loc-field-label">Section</div><select class="loc-sel" id="${containerId}_sec" style="width:65px">${opts.map(o=>`<option value="${o}"${o===currentSection?' selected':''}>${o||'—'}</option>`).join('')}</select></div>`;
+      }
+    } else if(su.type==='shelves'){
+      // dropdown of custom slot labels
+      const labels=su.slotLabels||Array.from({length:su.count},(_, i)=>`Slot ${i+1}`);
+      slotSel=`<div class="loc-field"><div class="loc-field-label">Slot</div><select class="loc-sel" id="${containerId}_bin" style="min-width:120px">
+        <option value="">— Select —</option>
+        ${labels.map((l,i)=>`<option value="${i+1}"${String(i+1)===String(currentBin)?' selected':''}>${l}</option>`).join('')}
       </select></div>`;
+    } else if(su.type==='drawers'){
+      // drawer number + row + col
+      slotSel=`<div class="loc-field"><div class="loc-field-label">Drawer</div><input class="loc-sel" type="number" id="${containerId}_bin" min="1" max="${su.count}" placeholder="—" style="width:58px" value="${currentBin}"></div>`;
+      // parse existing section R{r}C{c}
+      const rm=currentSection.match(/R(\d+)C(\d+)/);
+      const cr=rm?rm[1]:'',cc=rm?rm[2]:'';
+      const rowOpts=Array.from({length:su.rows||2},(_, i)=>i+1).map(r=>`<option value="${r}"${String(r)===cr?' selected':''}>${r}</option>`).join('');
+      const colOpts=Array.from({length:su.cols||4},(_, i)=>i+1).map(c=>`<option value="${c}"${String(c)===cc?' selected':''}>${c}</option>`).join('');
+      secSel=`<div class="loc-field"><div class="loc-field-label">Row</div><select class="loc-sel" id="${containerId}_drow" style="width:56px"><option value="">—</option>${rowOpts}</select></div>
+              <div class="loc-field"><div class="loc-field-label">Col</div><select class="loc-sel" id="${containerId}_dcol" style="width:56px"><option value="">—</option>${colOpts}</select></div>`;
     }
   }
   container.innerHTML=suSel+slotSel+secSel;
@@ -671,11 +849,17 @@ function updateLocPicker(containerId){
 }
 
 function getLocValues(containerId){
-  return{
-    storageId:document.getElementById(containerId+'_su')?.value||'',
-    bin:document.getElementById(containerId+'_bin')?.value||'',
-    section:document.getElementById(containerId+'_sec')?.value||'',
-  };
+  const storageId=document.getElementById(containerId+'_su')?.value||'';
+  const bin=document.getElementById(containerId+'_bin')?.value||'';
+  const su=getSU(storageId);
+  let section='';
+  if(su?.type==='bins') section=document.getElementById(containerId+'_sec')?.value||'';
+  else if(su?.type==='drawers'){
+    const r=document.getElementById(containerId+'_drow')?.value||'';
+    const c=document.getElementById(containerId+'_dcol')?.value||'';
+    if(r&&c) section=`R${r}C${c}`;
+  }
+  return{storageId,bin,section};
 }
 
 // ── BRANDS ────────────────────────────────────────────────────────────────────
@@ -702,10 +886,25 @@ function renderBrandList(){
 function selectStorageType(type){
   newStorageType=type;
   ['bins','shelves','drawers'].forEach(t=>document.getElementById('type-'+t).classList.toggle('selected',t===type));
-  const tm=TYPE_META[type];
-  document.getElementById('suCountLabel').textContent=`Number of ${tm.label}`;
-  document.getElementById('suSectionRow').style.display=type==='bins'?'flex':'none';
-  document.getElementById('suCount').value=type==='bins'?48:type==='shelves'?6:8;
+  document.getElementById('suBinsOptions').style.display=type==='bins'?'block':'none';
+  document.getElementById('suShelvesOptions').style.display=type==='shelves'?'block':'none';
+  document.getElementById('suDrawersOptions').style.display=type==='drawers'?'block':'none';
+  if(type==='shelves') renderShelfLabelInputs();
+}
+
+function renderShelfLabelInputs(){
+  const count=parseInt(document.getElementById('suShelfCount').value)||6;
+  const container=document.getElementById('suShelfLabels');
+  // preserve existing values
+  const existing=[];
+  container.querySelectorAll('input').forEach(i=>existing.push(i.value));
+  container.innerHTML='';
+  for(let i=0;i<count;i++){
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:8px';
+    div.innerHTML=`<span style="font-size:11px;color:var(--muted);min-width:20px;text-align:right">${i+1}</span><input type="text" placeholder="e.g. Top Shelf, Big Tub, Open Shelf" value="${existing[i]||''}" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none">`;
+    container.appendChild(div);
+  }
 }
 
 function openAddStorageModal(editId=null){
@@ -715,13 +914,31 @@ function openAddStorageModal(editId=null){
     const su=getSU(editId);if(!su)return;
     document.getElementById('suName').value=su.name;
     document.getElementById('suDesc').value=su.desc||'';
-    document.getElementById('suCount').value=su.count;
-    document.getElementById('suSections').value=su.sections||2;
     selectStorageType(su.type);
     newStorageType=su.type;
+    if(su.type==='bins'){
+      document.getElementById('suCount').value=su.count||48;
+      document.getElementById('suSections').value=su.sections||2;
+    } else if(su.type==='shelves'){
+      document.getElementById('suShelfCount').value=su.slotLabels?.length||6;
+      renderShelfLabelInputs();
+      // restore saved labels
+      if(su.slotLabels){
+        const inputs=document.getElementById('suShelfLabels').querySelectorAll('input');
+        su.slotLabels.forEach((l,i)=>{if(inputs[i])inputs[i].value=l;});
+      }
+    } else if(su.type==='drawers'){
+      document.getElementById('suDrawerCount').value=su.count||6;
+      document.getElementById('suDrawerRows').value=su.rows||2;
+      document.getElementById('suDrawerCols').value=su.cols||4;
+    }
   }else{
     document.getElementById('suName').value='';
     document.getElementById('suDesc').value='';
+    document.getElementById('suShelfCount').value=6;
+    document.getElementById('suDrawerCount').value=6;
+    document.getElementById('suDrawerRows').value=2;
+    document.getElementById('suDrawerCols').value=4;
     document.getElementById('suCount').value=48;
     document.getElementById('suSections').value=2;
     selectStorageType('bins');
@@ -733,13 +950,19 @@ function saveStorageUnit(){
   const name=document.getElementById('suName').value.trim();
   if(!name){showToast('Name required',true);return;}
   const editId=document.getElementById('editStorageId').value;
-  const su={
-    id:editId||('su'+Date.now()),
-    name,type:newStorageType,
-    count:parseInt(document.getElementById('suCount').value)||10,
-    sections:parseInt(document.getElementById('suSections').value)||2,
-    desc:document.getElementById('suDesc').value.trim(),
-  };
+  let su={id:editId||('su'+Date.now()),name,type:newStorageType,desc:document.getElementById('suDesc').value.trim()};
+  if(newStorageType==='bins'){
+    su.count=parseInt(document.getElementById('suCount').value)||48;
+    su.sections=parseInt(document.getElementById('suSections').value)||2;
+  } else if(newStorageType==='shelves'){
+    const inputs=document.getElementById('suShelfLabels').querySelectorAll('input');
+    su.slotLabels=[...inputs].map((inp,i)=>inp.value.trim()||`Slot ${i+1}`);
+    su.count=su.slotLabels.length;
+  } else if(newStorageType==='drawers'){
+    su.count=parseInt(document.getElementById('suDrawerCount').value)||6;
+    su.rows=parseInt(document.getElementById('suDrawerRows').value)||2;
+    su.cols=parseInt(document.getElementById('suDrawerCols').value)||4;
+  }
   if(editId){const idx=storageUnits.findIndex(s=>s.id===editId);if(idx>=0)storageUnits[idx]=su;else storageUnits.push(su);}
   else storageUnits.push(su);
   save('ts_storage',storageUnits);
@@ -780,6 +1003,24 @@ function renderStorageUnitList(){
       </div>
     </div>`;
   }).join('');
+}
+
+function renderStorageUnitListInline(){
+  const el=document.getElementById('storageUnitListInline');if(!el)return;
+  if(!storageUnits.length){el.innerHTML='';return;}
+  el.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 2px">` +
+    storageUnits.map(su=>{
+      const tm=TYPE_META[su.type]||TYPE_META.bins;
+      const toolCount=tools.filter(t=>t.storageId===su.id).length;
+      return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 11px;display:flex;align-items:center;gap:8px;min-width:0">
+        <span style="font-size:16px">${tm.icon}</span>
+        <div style="min-width:0">
+          <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${su.name}</div>
+          <div style="font-size:10px;color:var(--muted)">${toolCount} items</div>
+        </div>
+        <button onclick="openAddStorageModal('${su.id}')" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10px;color:var(--muted);cursor:pointer">✏️</button>
+      </div>`;
+    }).join('') + `</div>`;
 }
 
 function populateStorageSelect(){
@@ -996,7 +1237,13 @@ function confirmAdj(){
   save('ts_tools',tools);updateCount();
   showToast(diff===0?'No change':diff>0?`+${diff} added · now ${adjNewQty} pcs`:`${Math.abs(diff)} removed · now ${adjNewQty} pcs`,diff<0);
   document.getElementById('adjustCard').classList.remove('show');
-  adjSelectedId=null;clearScan();
+  const tid=adjSelectedId;
+  adjSelectedId=null;
+  clearScan();
+  // Always reset to Add Stock mode after adjustment
+  setMode('add');
+  // Check low stock after a removal
+  if(diff<0)checkLowStock(tid,adjNewQty);
 }
 
 // ── SUBMIT ────────────────────────────────────────────────────────────────────
@@ -1025,6 +1272,7 @@ function submitTool(){
     grade:document.getElementById('fGrade').value,
     qty:parseInt(document.getElementById('fQty').value)||1,
     notes:document.getElementById('fNotes').value,
+    supplierId:parseInt(document.getElementById('fSupplier')?.value)||null,
     storageId:loc.storageId,bin:loc.bin,section:loc.section,
     extra,addedAt:new Date().toISOString(),
   };
@@ -1104,18 +1352,37 @@ function renderStorageView(){
     }
     html+='</div>';
     el.innerHTML=html;
-  }else{
-    // List view for shelves/drawers
+  } else if(su.type==='shelves'){
+    // List view with custom slot labels
+    const labels=su.slotLabels||Array.from({length:su.count},(_,i)=>`Slot ${i+1}`);
     let html='<div style="display:flex;flex-direction:column;gap:6px">';
-    for(let b=1;b<=su.count;b++){
-      const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(b));
+    labels.forEach((label,i)=>{
+      const slotNum=i+1;
+      const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(slotNum)&&(!filterSection||t.section===filterSection));
       const qty=inSlot.reduce((s,t)=>s+t.qty,0);
-      const preview=inSlot.slice(0,2).map(t=>`${t.brand||''} ${t.partNumber}`).join(', ');
-      html+=`<div class="storage-cell${qty?' has-stock':''}" onclick="openSlotModal('${suId}',${b})">
-        <div class="sc-num${qty?' has-s':''}">${tm.slotLabel} ${b}</div>
+      const preview=inSlot.slice(0,2).map(t=>t.diameter||t.partNumber).join(', ');
+      html+=`<div class="storage-cell${qty?' has-stock':''}" onclick="openSlotModal('${suId}',${slotNum})">
+        <div class="sc-num${qty?' has-s':''}" style="min-width:0;flex-shrink:0;font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</div>
         <div class="sc-main">
           <div class="sc-preview">${qty?preview:'Empty'}</div>
           ${qty?`<div class="sc-qty">${qty} pcs · ${inSlot.length} item${inSlot.length!==1?'s':''}</div>`:''}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  } else if(su.type==='drawers'){
+    // Drawers — list of drawers, each showing its grid summary
+    let html='<div style="display:flex;flex-direction:column;gap:6px">';
+    for(let d=1;d<=su.count;d++){
+      const inDrawer=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(d));
+      const qty=inDrawer.reduce((s,t)=>s+t.qty,0);
+      const preview=inDrawer.slice(0,2).map(t=>t.diameter||t.partNumber).join(', ');
+      html+=`<div class="storage-cell${qty?' has-stock':''}" onclick="openDrawerModal('${suId}',${d})">
+        <div class="sc-num${qty?' has-s':''}" style="min-width:52px">Drawer ${d}</div>
+        <div class="sc-main">
+          <div class="sc-preview">${qty?preview:'Empty'}</div>
+          ${qty?`<div class="sc-qty">${qty} pcs · ${inDrawer.length} item${inDrawer.length!==1?'s':''} · ${su.rows||2}×${su.cols||4} grid</div>`:`<div style="font-size:10px;color:var(--muted)">${su.rows||2} rows × ${su.cols||4} cols</div>`}
         </div>
       </div>`;
     }
@@ -1124,11 +1391,35 @@ function renderStorageView(){
   }
 }
 
-function openSlotModal(suId,slotNum){
+function openDrawerModal(suId,drawerNum){
+  const su=getSU(suId);if(!su)return;
+  const rows=su.rows||2,cols=su.cols||4;
+  const inDrawer=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(drawerNum));
+  document.getElementById('modalTitle').textContent=`${su.name} · Drawer ${drawerNum}`;
+  document.getElementById('modalSub').textContent=`${rows} rows × ${cols} cols${inDrawer.length?' · '+inDrawer.length+' items':' · Empty'}`;
+
+  // Build grid
+  let html='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:5px;margin-bottom:12px">';
+  for(let r=1;r<=rows;r++){
+    for(let c=1;c<=cols;c++){
+      const sec=`R${r}C${c}`;
+      const item=inDrawer.find(t=>t.section===sec);
+      html+=`<div style="background:${item?'rgba(59,130,246,.1)':'var(--card)'};border:1px solid ${item?'var(--accent2)':'var(--border)'};border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;min-height:52px;display:flex;flex-direction:column;justify-content:center;gap:2px" onclick="openSlotModal('${suId}',${drawerNum},'${sec}')">
+        <div style="font-size:8px;color:var(--muted);font-family:Syne,sans-serif;font-weight:700">R${r}·C${c}</div>
+        ${item?`<div style="font-size:9px;color:var(--text);line-height:1.2">${item.diameter||item.partNumber.slice(0,8)}</div><div style="font-size:9px;color:var(--green)">${item.qty}pcs</div>`:`<div style="font-size:8px;color:var(--border)">—</div>`}
+      </div>`;
+    }
+  }
+  html+='</div>';
+  document.getElementById('modalItems').innerHTML=html;
+  document.getElementById('modalBg').classList.add('show');
+}
+
+function openSlotModal(suId,slotNum,filterSection=null){
   const su=getSU(suId);if(!su)return;
   const tm=TYPE_META[su.type]||TYPE_META.bins;
   const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(slotNum));
-  document.getElementById('modalTitle').textContent=`${su.name} · ${tm.slotLabel} ${slotNum}`;
+  const sectionLabel=filterSection?` · ${filterSection}`:'';document.getElementById('modalTitle').textContent=`${su.name} · ${su.type==='drawers'?'Drawer':'Slot'} ${slotNum}${sectionLabel}`;
   document.getElementById('modalSub').textContent=inSlot.length?`${inSlot.length} item${inSlot.length>1?'s':''} · ${inSlot.reduce((s,t)=>s+t.qty,0)} pcs total`:'Empty';
 
   if(!inSlot.length){
@@ -1179,7 +1470,11 @@ function openEdit(id){
   document.getElementById('eDiam').value=t.diameter||'';
   document.getElementById('eGrade').value=t.grade||'';
   document.getElementById('eQty').value=t.qty||1;
+  document.getElementById('eMinQty').value=t.minQty||'';
+  document.getElementById('eMaxQty').value=t.maxQty||'';
   document.getElementById('eNotes').value=t.notes||'';
+  populateSupplierSelects();
+  if(t.supplierId)document.getElementById('eSupplier').value=t.supplierId;
   renderLocPicker('editLocRow',t.storageId||'',t.bin||'',t.section||'');
   document.getElementById('editModalBg').classList.add('show');
 }
@@ -1205,6 +1500,9 @@ function saveEdit(){
     diameter:document.getElementById('eDiam').value.trim(),
     grade:document.getElementById('eGrade').value.trim(),
     qty:parseInt(document.getElementById('eQty').value)||0,
+    minQty:parseInt(document.getElementById('eMinQty').value)||0,
+    maxQty:parseInt(document.getElementById('eMaxQty').value)||0,
+    supplierId:parseInt(document.getElementById('eSupplier').value)||null,
     storageId:loc.storageId,bin:loc.bin,section:loc.section,
     notes:document.getElementById('eNotes').value.trim(),
     updatedAt:new Date().toISOString(),
@@ -1220,14 +1518,36 @@ function deleteToolFromEdit(){
 
 function closeEditModal(e){if(!e||e.target===document.getElementById('editModalBg'))document.getElementById('editModalBg').classList.remove('show');}
 
+// ── CONTACTS MODAL ───────────────────────────────────────────────────────────
+function openContactsModal(){
+  // Populate fields from localStorage
+  const pn=localStorage.getItem('ts_proc_name')||'';
+  const pe=localStorage.getItem('ts_proc_email')||'';
+  const pc=localStorage.getItem('ts_proc_cc')||'';
+  const pnEl=document.getElementById('procName');
+  const peEl=document.getElementById('procEmail');
+  const pcEl=document.getElementById('procCC');
+  if(pnEl)pnEl.value=pn;
+  if(peEl)peEl.value=pe;
+  if(pcEl)pcEl.value=pc;
+  renderSupplierList();
+  document.getElementById('contactsModalBg').classList.add('show');
+}
+
+function closeContactsModal(e){
+  if(!e||e.target===document.getElementById('contactsModalBg'))
+    document.getElementById('contactsModalBg').classList.remove('show');
+}
+
 // ── TABS ──────────────────────────────────────────────────────────────────────
 function switchTab(tab){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['scan','inventory','storage','settings'][i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   if(tab==='inventory')renderInventory();
-  if(tab==='storage'){populateStorageSelect();renderStorageView();}
-  if(tab==='settings'){renderStorageUnitList();renderBrandList();}
+  if(tab==='storage'){populateStorageSelect();renderStorageView();renderStorageUnitListInline();}
+  if(tab==='contacts'){renderSupplierList();loadProcSettings();}
+  if(tab==='settings'){renderBrandList();renderStorageUnitList();}
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
@@ -1801,7 +2121,8 @@ function openDetail(id) {
   detailToolId = id;
   const meta = CAT_META[t.cat] || CAT_META.other;
   const ls = locStr(t);
-  const addedDate = t.addedAt ? new Date(t.addedAt).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const sup = t.supplierId ? suppliers.find(s => s.id === t.supplierId) : null;
+  const stockColor = t.minQty && t.qty <= t.minQty ? 'var(--warn)' : 'var(--green)';
   const verifiedDate = t.aiVerified ? new Date(t.aiVerified).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}) : null;
 
   function row(label, value, color='') {
@@ -1821,15 +2142,18 @@ function openDetail(id) {
     <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:2px">${t.partNumber||'—'}</div>
     <div style="font-size:14px;color:var(--muted);margin-bottom:16px">${t.brand||'Unknown brand'}</div>
     <div style="background:var(--bg);border-radius:12px;padding:0 12px;margin-bottom:14px">
-      ${row('Quantity', `<span style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:var(--green)">${t.qty}</span> <span style="font-size:11px;color:var(--muted)">pcs</span>`)}
+      ${row('Quantity', `<span style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:${stockColor}">${t.qty}</span> <span style="font-size:11px;color:var(--muted)">pcs${t.minQty&&t.qty<=t.minQty?' ⚠️ LOW':''}</span>`)}
+      ${t.minQty ? row('Min / Max', `${t.minQty} pcs${t.maxQty?' · max '+t.maxQty+' pcs':''}`, 'var(--muted)') : ''}
       ${row('Location', ls || '—', 'var(--accent2)')}
       ${row('Size / Ø', t.diameter)}
       ${row('Shape', t.shape)}
       ${row('Corner Radius', t.cornerRadius)}
       ${row('Grade / Coating', t.grade)}
       ${row('Notes', t.notes)}
-      ${row('Added', addedDate)}
-      ${verifiedDate ? row('Verified', verifiedDate, 'var(--green)') : ''}
+      ${sup ? row('Supplier', sup.company + (sup.rep ? ' · '+sup.rep : '')) : ''}
+      ${sup?.email ? row('Rep Email', `<a href="mailto:${sup.email}" style="color:var(--accent2)">${sup.email}</a>`) : ''}
+      ${row('Added', t.addedAt ? new Date(t.addedAt).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}) : '—')}
+      ${verifiedDate ? row('AI Verified', verifiedDate, 'var(--green)') : ''}
     </div>
   `;
 
@@ -1852,6 +2176,127 @@ function detailToReorder() {
   if (detailToolId) openReorder(detailToolId);
 }
 
+// ── SUPPLIERS ─────────────────────────────────────────────────────────────────
+let suppliers = load('ts_suppliers', []);
+
+function saveProcSettings() {
+  localStorage.setItem('ts_proc_name',  document.getElementById('procName').value.trim());
+  localStorage.setItem('ts_proc_email', document.getElementById('procEmail').value.trim());
+  localStorage.setItem('ts_proc_cc',    document.getElementById('procCC').value.trim());
+}
+
+function loadProcSettings() {
+  const n = document.getElementById('procName');
+  const e = document.getElementById('procEmail');
+  const c = document.getElementById('procCC');
+  if (n) n.value = localStorage.getItem('ts_proc_name')  || '';
+  if (e) e.value = localStorage.getItem('ts_proc_email') || '';
+  if (c) c.value = localStorage.getItem('ts_proc_cc')    || '';
+}
+
+function renderSupplierList() {
+  const el = document.getElementById('supplierList');
+  if (!el) return;
+  if (!suppliers.length) { el.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">No suppliers added yet.</div>'; return; }
+  el.innerHTML = suppliers.map(s => `
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${s.company||'—'}</div>
+        <div style="font-size:11px;color:var(--muted)">${s.rep||''} ${s.email ? '· '+s.email : ''} ${s.phone ? '· '+s.phone : ''}</div>
+      </div>
+      <button onclick="openSupplierModal(${s.id})" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 11px;font-size:11px;color:var(--text);cursor:pointer">Edit</button>
+      <button onclick="deleteSupplier(${s.id})" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:6px 10px;font-size:11px;color:var(--warn);cursor:pointer">✕</button>
+    </div>`).join('');
+}
+
+function openSupplierModal(id) {
+  document.getElementById('supplierEditId').value = id || '';
+  document.getElementById('supplierModalTitle').textContent = id ? 'Edit Supplier' : 'Add Supplier';
+  const s = id ? suppliers.find(x => x.id === id) : null;
+  document.getElementById('sCompany').value = s?.company || '';
+  document.getElementById('sRep').value     = s?.rep     || '';
+  document.getElementById('sEmail').value   = s?.email   || '';
+  document.getElementById('sPhone').value   = s?.phone   || '';
+  document.getElementById('supplierModalBg').classList.add('show');
+}
+
+function closeSupplierModal(e) {
+  if (!e || e.target === document.getElementById('supplierModalBg'))
+    document.getElementById('supplierModalBg').classList.remove('show');
+}
+
+function saveSupplier() {
+  const id = document.getElementById('supplierEditId').value;
+  const data = {
+    id: id ? parseInt(id) : Date.now(),
+    company: document.getElementById('sCompany').value.trim(),
+    rep:     document.getElementById('sRep').value.trim(),
+    email:   document.getElementById('sEmail').value.trim(),
+    phone:   document.getElementById('sPhone').value.trim(),
+  };
+  if (!data.company) { showToast('Company name required', true); return; }
+  if (id) { const i = suppliers.findIndex(x => x.id === parseInt(id)); if (i >= 0) suppliers[i] = data; }
+  else suppliers.push(data);
+  save('ts_suppliers', suppliers);
+  closeSupplierModal();
+  renderSupplierList();
+  showToast('✓ Supplier saved');
+}
+
+function deleteSupplier(id) {
+  if (!confirm('Remove this supplier?')) return;
+  suppliers = suppliers.filter(x => x.id !== id);
+  save('ts_suppliers', suppliers);
+  renderSupplierList();
+}
+
+function populateSupplierSelects() {
+  ['fSupplier', 'eSupplier', 'reorderSupplierSel'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— None —</option>' +
+      suppliers.map(s => `<option value="${s.id}">${s.company}${s.rep ? ' · '+s.rep : ''}</option>`).join('');
+    if (cur) sel.value = cur;
+  });
+}
+
+// ── LOW STOCK ─────────────────────────────────────────────────────────────────
+let lowStockToolId = null;
+
+function checkLowStock(toolId, newQty) {
+  const t = tools.find(x => x.id === toolId);
+  if (!t || !t.minQty) return;
+  if (newQty <= t.minQty) {
+    lowStockToolId = toolId;
+    const meta = CAT_META[t.cat] || CAT_META.other;
+    document.getElementById('lowStockMsg').innerHTML =
+      `<b style="color:var(--text)">${t.brand || ''} ${t.partNumber}</b> has dropped to <b style="color:var(--warn)">${newQty} pcs</b> — minimum is ${t.minQty} pcs.`;
+    const sup = t.supplierId ? suppliers.find(s => s.id === t.supplierId) : null;
+    document.getElementById('lowStockDetail').innerHTML = [
+      `Category:  ${meta.label}`,
+      t.diameter ? `Size:      ${t.diameter}` : '',
+      `Current:   ${newQty} pcs`,
+      t.maxQty ? `Max stock: ${t.maxQty} pcs` : '',
+      sup ? `\nSupplier:  ${sup.company}` : '',
+      sup?.rep ? `Rep:       ${sup.rep}` : '',
+      sup?.email ? `Email:     ${sup.email}` : '',
+      sup?.phone ? `Phone:     ${sup.phone}` : '',
+    ].filter(Boolean).join('\n');
+    document.getElementById('lowStockModalBg').classList.add('show');
+  }
+}
+
+function closeLowStockModal() {
+  document.getElementById('lowStockModalBg').classList.remove('show');
+  lowStockToolId = null;
+}
+
+function lowStockRequestStock() {
+  closeLowStockModal();
+  if (lowStockToolId) openReorder(lowStockToolId);
+}
+
 // ── REORDER ───────────────────────────────────────────────────────────────────
 let reorderTool = null;
 
@@ -1859,11 +2304,14 @@ function openReorder(id) {
   const t = tools.find(x => x.id === id);
   if (!t) return;
   reorderTool = t;
-  document.getElementById('reorderQtyInput').value = t.qty || 1;
-  document.getElementById('reorderRepInput').value = localStorage.getItem('ts_last_rep') || '';
+  populateSupplierSelects();
+  // Pre-select the tool's linked supplier
+  const sel = document.getElementById('reorderSupplierSel');
+  if (sel && t.supplierId) sel.value = t.supplierId;
+  // Default qty to max - current if max set, else 1
+  const suggestQty = t.maxQty && t.qty < t.maxQty ? t.maxQty - t.qty : 1;
+  document.getElementById('reorderQtyInput').value = suggestQty;
   refreshReorderText();
-  // Hide share button if Web Share API not available
-  document.getElementById('reorderShareBtn').style.display = navigator.share ? 'block' : 'none';
   document.getElementById('reorderModalBg').classList.add('show');
 }
 
@@ -1872,14 +2320,21 @@ function closeReorderModal(e) {
     document.getElementById('reorderModalBg').classList.remove('show');
 }
 
-function buildReorderText(t, qty, rep) {
+function getSelectedSupplier() {
+  const sel = document.getElementById('reorderSupplierSel');
+  const id = sel ? parseInt(sel.value) : null;
+  return id ? suppliers.find(s => s.id === id) : null;
+}
+
+function buildReorderText(t, qty) {
   const cat = CAT_META[t.cat] || CAT_META.other;
   const specs = [t.diameter, t.shape, t.cornerRadius, t.grade].filter(Boolean).join(' · ');
-  const su = getSU(t.storageId);
   const loc = locStr(t);
   const today = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+  const proc = localStorage.getItem('ts_proc_name') || '';
+  const sup = getSelectedSupplier();
   return [
-    rep ? `To: ${rep}` : '',
+    proc ? `To: ${proc}` : '',
     `Date: ${today}`,
     '',
     '── REORDER REQUEST ──────────────────',
@@ -1891,18 +2346,49 @@ function buildReorderText(t, qty, rep) {
     '',
     `Qty to order: ${qty} pcs`,
     `Current stock: ${t.qty} pcs${loc ? ' · ' + loc : ''}`,
+    t.maxQty ? `Max stock:    ${t.maxQty} pcs` : '',
     '─────────────────────────────────────',
+    sup ? '' : '',
+    sup ? '── SUPPLIER ─────────────────────────' : '',
+    sup ? `Company:      ${sup.company}` : '',
+    sup?.rep   ? `Rep:          ${sup.rep}` : '',
+    sup?.email ? `Email:        ${sup.email}` : '',
+    sup?.phone ? `Phone:        ${sup.phone}` : '',
+    sup ? '─────────────────────────────────────' : '',
     '',
-    'Please confirm availability and lead time.',
-  ].filter(l => l !== null && l !== undefined && !(l === '' && false)).join('\n').replace(/\n{3,}/g, '\n\n');
+    'Please confirm availability, pricing, and lead time.',
+  ].filter(l => l !== null && l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function refreshReorderText() {
   if (!reorderTool) return;
   const qty = parseInt(document.getElementById('reorderQtyInput').value) || 1;
-  const rep = document.getElementById('reorderRepInput').value.trim();
-  if (rep) localStorage.setItem('ts_last_rep', rep);
-  document.getElementById('reorderContent').textContent = buildReorderText(reorderTool, qty, rep);
+  document.getElementById('reorderContent').textContent = buildReorderText(reorderTool, qty);
+  // Update supplier info bar
+  const sup = getSelectedSupplier();
+  const bar = document.getElementById('reorderSupplierBar');
+  if (sup) {
+    bar.style.display = 'block';
+    bar.innerHTML = `<b>Supplier:</b> ${sup.company}${sup.rep ? '  ·  <b>Rep:</b> '+sup.rep : ''}${sup.email ? '<br><b>Email:</b> '+sup.email : ''}${sup.phone ? '  ·  <b>Phone:</b> '+sup.phone : ''}`;
+  } else {
+    bar.style.display = 'none';
+  }
+  // Update email button state
+  const procEmail = localStorage.getItem('ts_proc_email') || '';
+  const emailBtn = document.getElementById('reorderEmailBtn');
+  if (emailBtn) emailBtn.style.opacity = procEmail ? '1' : '0.4';
+}
+
+function emailReorder() {
+  const procEmail = localStorage.getItem('ts_proc_email') || '';
+  if (!procEmail) { showToast('Add procurement email in Settings first', true); return; }
+  const procCC = localStorage.getItem('ts_proc_cc') || '';
+  const t = reorderTool;
+  const qty = parseInt(document.getElementById('reorderQtyInput').value) || 1;
+  const subject = encodeURIComponent(`Reorder Request — ${t.brand || ''} ${t.partNumber || ''}`);
+  const body = encodeURIComponent(buildReorderText(t, qty));
+  const cc = procCC ? `&cc=${encodeURIComponent(procCC)}` : '';
+  window.location.href = `mailto:${procEmail}${cc}?subject=${subject}&body=${body}`;
 }
 
 function copyReorder() {
@@ -1912,19 +2398,35 @@ function copyReorder() {
     .catch(() => showToast('Copy failed', true));
 }
 
-function shareReorder() {
-  if (!navigator.share) return;
-  const text = document.getElementById('reorderContent').textContent;
-  const t = reorderTool;
-  navigator.share({
-    title: `Reorder: ${t.brand || ''} ${t.partNumber || ''}`,
-    text
-  }).catch(() => {});
-}
-
 // Init
 updateCount();
 populateStorageSelect();
+
+// ── INTRO SCREEN ──────────────────────────────────────────────────────────────
+(function(){
+  const intro = document.getElementById('introScreen');
+  const content = document.getElementById('introContent');
+  const divider = document.getElementById('introDivider');
+  const loader = document.getElementById('introLoader');
+
+  // Fade content in
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      content.style.opacity = '1';
+      content.style.transform = 'translateY(0)';
+      divider.style.width = '120px';
+      loader.style.opacity = '1';
+    }, 150);
+  });
+
+  // Fade out after 2.8s
+  setTimeout(() => {
+    intro.style.animation = 'introFadeOut .6s ease forwards';
+    setTimeout(() => {
+      intro.style.display = 'none';
+    }, 600);
+  }, 2800);
+})();
 </script>
 </body>
 </html>
