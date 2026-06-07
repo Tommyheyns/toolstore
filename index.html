@@ -1772,14 +1772,12 @@ function fillAIResult(p){
   // Trigger background verify to cross-check specs
   verifySingleAfterScan(p.brand||'', p.partNumber||'', p.notes||'');
   // Check if already in stock
-  const pnCheck=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+  const pnCheck=(p.partNumber||'').toLowerCase().replace(/\s/g,'');
   const brCheck=(p.brand||'').toLowerCase();
-  const dmCheck=(p.diameter||'').replace(/[^\d.]/g,'');
-  // Strict match: full part number must match exactly (including suffix/coating variant)
+  // Strict match: full part number must match exactly — normalize spaces only, keep dashes and commas
   const inStockMatch=tools.find(t=>{
     const tpn=(t.partNumber||'').toLowerCase().replace(/\s/g,'');
-    const spn=pnCheck.replace(/\s/g,'');
-    if(!spn||!tpn||tpn!==spn) return false; // exact part number required
+    if(!pnCheck||!tpn||tpn!==pnCheck) return false;
     const tbr=(t.brand||'').toLowerCase();
     return !brCheck||tbr.includes(brCheck)||brCheck.includes(tbr);
   });
