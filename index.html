@@ -1183,6 +1183,69 @@ Set categoryConfidence=uncertain ONLY when genuinely unsure between milling and 
       ]}]})
     });
     clearInterval(ticker);
+    if(!resp.ok){
+      if(resp.status===401){localStorage.removeItem('ts_openai_key');showToast('Invalid key — cleared',true);}
+      else if(resp.status===429)showToast('Rate limit — retry shortly',true);
+      else showToast('Error '+resp.status,true);
+      document.getElementById('thinking').classList.remove('show');
+      document.getElementById('analyseBtn').disabled=false;
+      return;
+    }
+    const data=await resp.json();
+    const raw=data.choices?.[0]?.message?.content||'';
+    let p;try{const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
+    catch{p={category:'other',brand:'',partNumber:'',diameter:'',shape:'',grade:'',description:'',notes:'',qty:1,confidence:'low'};}
+
+    // Set category from AI response
+    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',solid_drill:'solid_drill',drill_holder:'drill_holder',other:'other'};
+    currentCat=catMap[p.category]||'other';
+    renderCatTags();renderCatFields();
+
+    // Show category confirmation if uncertain
+    if(p.categoryConfidence==='uncertain'){
+      pendingAIResult=p;
+      document.getElementById('catConfirmDetails').innerHTML=
+        `<b>${p.brand||'Unknown'} ${p.partNumber||''}</b><br>${p.diameter||''} ${p.grade||''}<br><span style="color:var(--muted);font-size:11px">AI suggested: ${CAT_META[currentCat]?.label||currentCat}</span>`;
+      document.getElementById('thinking').classList.remove('show');
+      document.getElementById('analyseBtn').disabled=false;
+      document.getElementById('catConfirmModalBg').classList.add('show');
+      return;
+    }
+
+    document.getElementById('thinking').classList.remove('show');
+    document.getElementById('analyseBtn').disabled=false;
+    fillAIResult(p);
+  }catch(err){
+    clearInterval(ticker);
+    document.getElementById('thinking').classList.remove('show');
+    document.getElementById('analyseBtn').disabled=false;
+    showToast('Network error',true);
+  }
+}
+
+// ── ADJUST SCAN ────────────────────────────────────────────────────────────────
+async function analyseForAdjust(){
+  if(!currentImgB64)return;
+  const apiKey=getApiKey();if(!apiKey){showToast('No API key',true);return;}
+  document.getElementById('thinking').classList.add('show');
+  document.getElementById('analyseBtn').disabled=true;
+  document.getElementById('adjustCard').classList.remove('show');
+  const msgs=['Reading label…','Searching stock…','Matching…'];
+  let mi=0;const ticker=setInterval(()=>{document.getElementById('thinkingMsg').textContent=msgs[mi++%msgs.length];},800);
+  try{
+    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'gpt-4o',max_tokens:300,messages:[{role:'user',content:[
+        {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
+        {type:'text',text:`Read this cutting tool label for stock lookup. Extract exact part number — every digit, dash, comma matters.
+GEWINDEBOHRER=tap, SL-RATIOFRAESER=end mill, WECHSELPLATTENHALTER=drill holder
+Gühring=yellow label, K/P is NOT the part number — put K/P in notes only
+Return ONLY raw JSON:
+{"brand":"","partNumber":"exact full part number","diameter":"","grade":"","notes":"K/P ref if present"}
+Copy part number exactly as printed.`}
+      ]}]})
+    });
+    clearInterval(ticker);
     if(!resp.ok){showToast('Error '+resp.status,true);document.getElementById('thinking').classList.remove('show');document.getElementById('analyseBtn').disabled=false;return;}
     const data=await resp.json();
     const raw=data.choices?.[0]?.message?.content||'';
