@@ -725,7 +725,7 @@ const CAT_META={
   other:       {icon:'⚪',label:'Other',            color:'#6b7899'},
 };
 const CAT_KEYS=Object.keys(CAT_META);
-const APP_VERSION='2.3';
+const APP_VERSION='2.4';
 const DEFAULT_BRANDS=['Gühring','ISCAR','SECO','Sandvik Coromant','Kennametal','Walter','Mitsubishi','Sumitomo','Kyocera'];
 const TYPE_META={
   bins:   {icon:'🗄️',label:'Bins',    slotLabel:'Bin',     hasSection:true},
@@ -1087,160 +1087,133 @@ async function analyseImage(){
   const apiKey=getApiKey();if(!apiKey){showToast('No API key',true);return;}
   document.getElementById('thinking').classList.add('show');
   document.getElementById('analyseBtn').disabled=true;
-  const msgs=['Reading label…','Identifying brand…','Extracting details…','Detecting category…'];
-  let mi=0;const ticker=setInterval(()=>{document.getElementById('thinkingMsg').textContent=msgs[mi++%msgs.length];},900);
+
+  // ── STEP 1: Read part number only ────────────────────────────────────────
+  document.getElementById('thinkingMsg').textContent='Reading part number…';
+  let partData = null;
   try{
-    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+    const r1=await fetch('https://api.openai.com/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-      body:JSON.stringify({model:'gpt-4o',max_tokens:700,messages:[{role:'user',content:[
+      body:JSON.stringify({model:'gpt-4o',max_tokens:200,messages:[{role:'user',content:[
         {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
-        {type:'text',text:`You are a machining tool identification expert with internet access.
+        {type:'text',text:`Look at this tool label. Extract ONLY the part/order number and brand.
 
-WORKFLOW — follow this exact order:
-1. Read ALL visible text from the label precisely
-2. Identify the part number exactly as printed
-3. SEARCH the manufacturer website for that exact part number to get verified details
-4. Fill ALL fields from verified manufacturer data
-5. ONLY THEN check if description/category matches what was on label
+Rules:
+- Part number is usually after "No" or "N°" symbol, or the largest number on the label
+- Brand: look for Gühring (yellow label), ISCAR, SECO, BIG Daishowa, Kyocera, Magic Drill
+- GEWINDEBOHRER = Gühring tap (brand=Gühring)
+- WECHSELPLATTENHALTER = Gühring drill holder (brand=Gühring)
+- K/P numbers are NOT the part number — ignore them
+- HSS-E numbers (e.g. 22343540) are NOT part numbers — ignore them
+- EDP numbers are NOT part numbers — ignore them
+- The part number usually looks like: 5725-4,826 or ICP 0531 or SPGX11T3-C1
 
-SEARCH RULES:
-- Gühring part number → search guhring.com — get: category, coating, OAL length, flutes, drill depth, corner radius
-- ISCAR → search iscar.com
-- SECO → search secotools.com
-- BIG Daishowa → search bigdaishowa.com
-- Kyocera/Magic Drill → search kyocera-cutting.com
-- Unknown brand → search "[part number] cutting tool specifications"
-
-Return ONLY raw JSON, no markdown:
-{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or solid_drill or drill_holder or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","oal":"overall length e.g. 75mm","reach":"cutting length/reach e.g. 30mm","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.5 or sharp/none","flutes":"number of flutes","extraField1":"drill depth e.g. 5xD / tap pitch","extraField2":"tap thread type e.g. UNC, BSPT, NPT","tapRing":"ring colour on tap e.g. Gold, Blue, Bright, Red — indicates coating type","description":"verified plain English from manufacturer e.g. Solid carbide end mill Ø6mm 4-flute 35.5mm OAL DIN 6527L sharp corner","notes":"K/P ref, EDP, barcode — never put K/P in grade","qty":1,"confidence":"high or medium or low"}
-
-=== CRITICAL FIELD RULES ===
-grade/coating: ONLY actual coating e.g. nano-FIREX, FIREX, TiAlN, TiN, IC908, T400D, HSS-E, HSCO. NEVER K/P numbers here.
-K/P numbers → NOTES field only. K/P is NOT a part number and NOT a coating.
-partNumber: copy EXACTLY from label. Every digit, dash, comma matters.
-GEWINDEBOHRER: this is German for "thread tap" — it is NOT a brand name. brand=Gühring when GEWINDEBOHRER visible.
-GOLDRING: gold-coloured ring on tap = gold oxide coating. NOT a brand. Put in tapRing field.
-BLUERING: blue ring on tap = steam treated. NOT a brand. Put in tapRing field.
-BRIGHTRING: bright/uncoated ring. Put in tapRing field.
-REDRING: red ring. Put in tapRing field.
-powertap: Gühring product line name for spiral point taps. NOT a brand.
-B-NR / C-NR: Gühring internal designation prefix — NOT part of the thread size. e.g. "B-NR.10-24UNC-2B" → thread = #10-24 UNC 2B
-
-=== GÜHRING SERIES — VERIFIED FROM GUHRING.COM ===
-5511 = solid carbide drill RT100U nano-FIREX coolant through → solid_drill
-5514 = solid carbide drill → solid_drill
-5516 = solid carbide end mill → end_mill
-5525 = solid carbide end mill → end_mill
-5537 = solid carbide end mill → end_mill
-5562 = solid carbide end mill (SL-RATIOFRAESER) → end_mill
-5584 = solid carbide end mill DIN 6527L → end_mill (label shows B=diameter, then reach, then OAL)
-5735 = solid carbide end mill → end_mill
-5262 = solid carbide end mill → end_mill
-5725 = HSS-E tap powertap spiral point → tap (GOLDRING=gold oxide coating)
-5726 = HSS-E tap powertap spiral point → tap
-973 = HSS-E tap → tap
-5007 = tap → tap
-3574 = angle/dovetail cutter WINKELFRAESER → other
-4108 = drill holder WECHSELPLATTENHALTER → drill_holder (FUER xx,xxx-xx,xxx = diameter range it accepts)
-4111, 4112, 4115, 4229 = drill INSERT tips → drill_insert
-RT100 series = drill holders → drill_holder
-
-=== GÜHRING LABEL FORMAT FOR END MILLS (5584 etc) ===
-"B 6,0 - 13,0" means: diameter=6.0mm, reach/cutting length=13.0mm
-"30,0 - 35,5" means: flute length - OAL (overall length)
-So 5584-6,000 · B 6,0-13,0 · 30,0-35,5 = Ø6mm end mill, reach 13mm, OAL 35.5mm
-
-=== CORNER RADIUS FROM GÜHRING SUFFIX ===
-R-N = no radius (sharp corner)
-R-RF1 = sharp corner (RF1 geometry)
-R-RT1 = sharp corner
-R-B = ball nose
-Part number suffix -R0.5 or similar = corner radius 0.5mm
-DIN 6527L = 4-flute solid carbide end mill standard
-
-=== GÜHRING LABEL FORMAT FOR HOLDERS (4108 etc) ===
-"FUER 15,500-15,999" = this holder accepts inserts from Ø15.500mm to Ø15.999mm
-"WN 32 R-HTW" = shank standard, right hand, holder type
-Part number 4108-15,500 = holder for ~Ø15.5mm inserts
-Description should include the diameter range: "Gühring drill holder for Ø15.5-15.9mm inserts WN32"
-
-=== ISCAR ===
-ICP, ICM, HCP, IDI = drill inserts → drill_insert
-SPGX, APKT, SEHT, OFMT, XOEX = milling inserts → milling_insert
-CNMG, TNMG, DCMT, VCMT, CCMT, VNMG = turning inserts → turning_insert
-Grades: IC908, IC528, IC830 = ISCAR coatings
-
-=== SECO ===
-SPGX, RPHT, RCMT, RCGX = milling inserts → milling_insert
-CNMG, TNMG, DCMT = turning inserts → turning_insert
-Grades: T400D, TP2500, TP1500, MF5 = SECO coatings
-
-=== BIG DAISHOWA ===
-CN, BN prefix → categoryConfidence=uncertain
-ACM250F, ACM300 = BIG Daishowa coatings
-
-=== KYOCERA / MAGIC DRILL ===
-"Magic Drill", DRZ/DRA series, S##-DRZ → brand=Kyocera, category=drill_holder
-
-=== CATEGORIES ===
-drill_insert: Indexable tips. ICP, ICM, HCP, IDI, Gühring 4112/4115/4229.
-milling_insert: Face/shoulder/slot inserts. SPGX, RPHT, APKT, SEHT, OFMT.
-turning_insert: Lathe inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG.
-solid_drill: Solid carbide/HSS drills. Gühring 5511/5514, SPIRALBOHRER.
-drill_holder: Holder bodies. Gühring 4108, RT100, Magic Drill body, WECHSELPLATTENHALTER.
-tap: Thread cutting. GEWINDEBOHRER. Thread: M6x1.0, NPT, BSPT, BSP, UNC, UNF.
-end_mill: Solid carbide end mills. Gühring 5516/5525/5537/5562/5584/5735, SL-RATIOFRAESER.
-other: Angle cutters WINKELFRAESER, reamers, boring bars.
-
-=== ISO INSERT CORNER RADIUS ===
-Last 2 digits of ISO code × 0.1mm: 04=R0.4, 08=R0.8, 12=R1.2, 02=R0.2
-
-=== PART NUMBER EXACT MATCH ===
-Copy every digit, dash, comma exactly. 5511-5,500 ≠ 5511-5,501.
-K/P is a batch reference, NOT the part number.
-
-Set categoryConfidence=uncertain ONLY when genuinely unsure between milling and turning inserts.`}
+Return ONLY raw JSON:
+{"brand":"","partNumber":"exact part number only","qty":1,"tapRing":"if visible: Gold/Blue/Bright/Red ring colour on the tool, else empty"}`}
       ]}]})
     });
-    clearInterval(ticker);
-    if(!resp.ok){
-      if(resp.status===401){localStorage.removeItem('ts_openai_key');showToast('Invalid key — cleared',true);}
-      else if(resp.status===429)showToast('Rate limit — retry shortly',true);
-      else showToast('Error '+resp.status,true);
-      document.getElementById('thinking').classList.remove('show');
-      document.getElementById('analyseBtn').disabled=false;
-      return;
+    if(r1.ok){
+      const d1=await r1.json();
+      const raw1=d1.choices?.[0]?.message?.content||'';
+      const c1=raw1.replace(/\`\`\`json\s*/g,'').replace(/\`\`\`\s*/g,'').trim();
+      partData=JSON.parse((c1.match(/\{[\s\S]*\}/)||[c1])[0]);
     }
-    const data=await resp.json();
-    const raw=data.choices?.[0]?.message?.content||'';
-    let p;try{const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
-    catch{p={category:'other',brand:'',partNumber:'',diameter:'',shape:'',grade:'',description:'',notes:'',qty:1,confidence:'low'};}
+  }catch(e){console.warn('Step 1 failed',e);}
 
-    // Set category from AI response
-    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',solid_drill:'solid_drill',drill_holder:'drill_holder',other:'other'};
-    currentCat=catMap[p.category]||'other';
-    renderCatTags();renderCatFields();
-
-    // Show category confirmation if uncertain
-    if(p.categoryConfidence==='uncertain'){
-      pendingAIResult=p;
-      document.getElementById('catConfirmDetails').innerHTML=
-        `<b>${p.brand||'Unknown'} ${p.partNumber||''}</b><br>${p.diameter||''} ${p.grade||''}<br><span style="color:var(--muted);font-size:11px">AI suggested: ${CAT_META[currentCat]?.label||currentCat}</span>`;
-      document.getElementById('thinking').classList.remove('show');
-      document.getElementById('analyseBtn').disabled=false;
-      document.getElementById('catConfirmModalBg').classList.add('show');
-      return;
-    }
-
+  if(!partData?.partNumber){
     document.getElementById('thinking').classList.remove('show');
     document.getElementById('analyseBtn').disabled=false;
-    fillAIResult(p);
-  }catch(err){
-    clearInterval(ticker);
-    document.getElementById('thinking').classList.remove('show');
-    document.getElementById('analyseBtn').disabled=false;
-    showToast('Network error',true);
+    showToast('Could not read part number',true);
+    return;
   }
+
+  // ── STEP 2: Look up on manufacturer website ───────────────────────────────
+  document.getElementById('thinkingMsg').textContent=`Looking up ${partData.partNumber} on manufacturer site…`;
+  
+  const brand=(partData.brand||'').toLowerCase();
+  let searchSite='';
+  if(brand.includes('gühring')||brand.includes('guhring')) searchSite='guhring.com';
+  else if(brand.includes('iscar')) searchSite='iscar.com';
+  else if(brand.includes('seco')) searchSite='secotools.com';
+  else if(brand.includes('big')) searchSite='bigdaishowa.com';
+  else if(brand.includes('kyocera')||brand.includes('magic')) searchSite='kyocera-cutting.com';
+
+  let p = null;
+  try{
+    const searchQuery = searchSite 
+      ? `site:${searchSite} "${partData.partNumber}" specifications`
+      : `"${partData.partNumber}" cutting tool machining specifications brand category`;
+
+    const r2=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'gpt-4o',max_tokens:800,messages:[{role:'user',content:[
+        {type:'text',text:`You are a machining tool expert. The part number is: ${partData.partNumber}
+Brand identified from label: ${partData.brand||'unknown'}
+${searchSite?'Search '+searchSite+' for this exact part number to get all specifications.':'Search the web for this part number to identify the tool and get specifications.'}
+
+Using your training data AND web knowledge about this part number, provide complete verified specifications.
+
+GÜHRING KNOWLEDGE:
+5511/5514 = solid carbide drill (solid_drill) — RT100U, nano-FIREX, coolant through
+5516/5525/5537/5562/5584/5735 = solid carbide end mill (end_mill)
+5584 label format: B=diameter, reach, OAL e.g. B 6,0-13,0 / 30,0-35,5 = Ø6mm reach 13mm OAL 35.5mm
+5725/5726 = HSS-E tap powertap spiral point (tap) — GOLDRING=gold oxide, BLUERING=steam treated
+973/5007 = HSS-E tap (tap)
+4108 = drill holder WECHSELPLATTENHALTER (drill_holder) — FUER xx,xxx-xx,xxx = insert diameter range
+4112/4115/4229 = drill insert tips (drill_insert)
+3574 = WINKELFRAESER angle cutter (other)
+GEWINDEBOHRER on label = tap, brand=Gühring
+GOLDRING/BLUERING/BRIGHTRING = tap ring colour (coating indicator), NOT a brand
+B-NR/C-NR prefix = ignore, not part of thread designation
+e.g. B-NR.10-24UNC-2B → thread size = #10-24 UNC 2B
+R-N/R-RF1/R-RT1 = sharp corner, R-B = ball nose
+
+ISCAR: ICP/ICM/HCP/IDI=drill_insert, SPGX/APKT/SEHT=milling_insert, CNMG/TNMG/DCMT=turning_insert
+SECO: SPGX/RPHT/RCMT=milling_insert, grades T400D/TP2500=SECO coating
+BIG Daishowa: CN/BN prefix → categoryConfidence=uncertain
+
+Return ONLY raw JSON:
+{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or solid_drill or drill_holder or other","categoryConfidence":"certain or uncertain","brand":"${partData.brand||''}","partNumber":"${partData.partNumber}","diameter":"","oal":"","reach":"","flutes":"","grade":"coating only e.g. nano-FIREX HSS-E TiAlN — never K/P numbers","cornerRadius":"e.g. R0.5 or sharp","tapRing":"${partData.tapRing||''}","tapThread":"thread size e.g. M10x1.5 or #10-24 UNC","description":"clear plain English e.g. Gühring HSS-E tap #10-24 UNC gold ring or Solid carbide end mill Ø6mm OAL 35.5mm","notes":"","qty":${partData.qty||1},"confidence":"high or medium or low"}`}
+      ]}]})
+    });
+    if(r2.ok){
+      const d2=await r2.json();
+      const raw2=d2.choices?.[0]?.message?.content||'';
+      const c2=raw2.replace(/\`\`\`json\s*/g,'').replace(/\`\`\`\s*/g,'').trim();
+      p=JSON.parse((c2.match(/\{[\s\S]*\}/)||[c2])[0]);
+    }
+  }catch(e){console.warn('Step 2 failed',e);}
+
+  // Fallback if step 2 failed
+  if(!p){
+    p={category:'other',brand:partData.brand||'',partNumber:partData.partNumber,
+       diameter:'',grade:'',description:'',notes:'',qty:partData.qty||1,confidence:'low'};
+  }
+
+  // Always use the exactly-read part number from step 1
+  p.partNumber = partData.partNumber;
+  p.brand = p.brand || partData.brand;
+  if(partData.tapRing && !p.tapRing) p.tapRing = partData.tapRing;
+
+  // Set category
+  const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',solid_drill:'solid_drill',drill_holder:'drill_holder',other:'other'};
+  currentCat=catMap[p.category]||'other';
+  renderCatTags();renderCatFields();
+
+  // Show category confirmation if uncertain
+  if(p.categoryConfidence==='uncertain'){
+    pendingAIResult=p;
+    document.getElementById('catConfirmDetails').innerHTML=
+      `<b>${p.brand||'Unknown'} ${p.partNumber||''}</b><br>${p.diameter||''} ${p.grade||''}<br><span style="color:var(--muted);font-size:11px">AI suggested: ${CAT_META[currentCat]?.label||currentCat}</span>`;
+    document.getElementById('thinking').classList.remove('show');
+    document.getElementById('analyseBtn').disabled=false;
+    document.getElementById('catConfirmModalBg').classList.add('show');
+    return;
+  }
+
+  document.getElementById('thinking').classList.remove('show');
+  document.getElementById('analyseBtn').disabled=false;
+  fillAIResult(p);
 }
 
 // ── ADJUST SCAN ────────────────────────────────────────────────────────────────
