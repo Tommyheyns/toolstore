@@ -289,6 +289,13 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
         <div class="field"><label>Grade / Coating</label><input type="text" id="fGrade" placeholder="e.g. T400D"></div>
         <div class="field"><label>Qty (pcs)</label><input type="number" id="fQty" value="1" min="1"></div>
       </div>
+      <div class="field"><label>Description</label><input type="text" id="fDesc" placeholder="e.g. Solid carbide drill 5.5mm 5xD coolant through"></div>
+      <div class="field"><label>Material Application</label><input type="text" id="fMaterial" placeholder="e.g. Steel P, Stainless M, Cast Iron K"></div>
+      <div class="field-row">
+        <div class="field"><label>Drill Depth</label><input type="text" id="fDrillDepth" placeholder="e.g. 5xD"></div>
+        <div class="field"><label>Coolant Through</label><select id="fCoolant"><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+      </div>
+      <div class="field"><label>Tap Type</label><input type="text" id="fTapType" placeholder="e.g. Spiral point — through holes"></div>
       <div class="field"><label>Notes</label><input type="text" id="fNotes" placeholder="EDP, lot, barcode…"></div>
     </div>
     <!-- Dynamic location picker -->
@@ -495,6 +502,11 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     </div>
     <div class="edit-field"><label>Supplier</label><select id="eSupplier" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none"></select></div>
     <div class="edit-field"><label>Location</label><div id="editLocRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div></div>
+    <div class="edit-field"><label>Description</label><input type="text" id="eDesc" placeholder="Plain English description"></div>
+    <div class="edit-field"><label>Material Application</label><input type="text" id="eMaterial" placeholder="e.g. Steel P, Stainless M, Cast Iron K"></div>
+    <div class="edit-field"><label>Drill Depth</label><input type="text" id="eDrillDepth" placeholder="e.g. 5xD"></div>
+    <div class="edit-field"><label>Coolant Through</label><select id="eCoolant" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none"><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+    <div class="edit-field"><label>Tap Type</label><input type="text" id="eTapType" placeholder="e.g. Spiral point — through holes"></div>
     <div class="edit-field"><label>Notes</label><input type="text" id="eNotes"></div>
     <button class="edit-save" onclick="saveEdit()">✓ Save Changes</button>
     <button class="edit-delete" onclick="deleteToolFromEdit()">🗑 Delete This Item</button>
@@ -1160,7 +1172,8 @@ function findAndShowMatches(p){
   }else{
     hdr.textContent=scored[0].score>=100?'✓ Exact Match Found':`${scored.length} Match${scored.length>1?'es':''} Found`;
     el.innerHTML=scored.map(({tool:t})=>{
-      const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+      const specParts=[t.diameter,t.drillDepth,t.coolantThrough==='Yes'?'💧 Coolant':'',t.tapType?(t.tapType.split('—')[0]||'').trim():'',t.grade].filter(Boolean);
+      const sub=t.description||specParts.join(' · ');
       const loc=locStr(t)||'No location set';
       return`<div class="adj-item" id="adj-${t.id}" onclick="selectAdjItem(${t.id})">
         <div class="adj-pn">${t.brand||''} ${t.partNumber}</div>
@@ -1242,6 +1255,11 @@ function submitTool(){
     grade:document.getElementById('fGrade').value,
     qty:parseInt(document.getElementById('fQty').value)||1,
     notes:document.getElementById('fNotes').value,
+    description:document.getElementById('fDesc')?.value||'',
+    material:document.getElementById('fMaterial')?.value||'',
+    drillDepth:document.getElementById('fDrillDepth')?.value||'',
+    coolantThrough:document.getElementById('fCoolant')?.value||'',
+    tapType:document.getElementById('fTapType')?.value||'',
     storageId:loc.storageId,bin:loc.bin,section:loc.section,
     extra,addedAt:new Date().toISOString(),
   };
@@ -1280,7 +1298,8 @@ function renderInventory(){
     const meta=CAT_META[c]||CAT_META.other;
     html+=`<div class="inv-group"><div class="inv-group-title">${meta.icon} ${meta.label}<span class="inv-group-count">${items.length}</span></div>`;
     items.sort((a,b)=>(a.brand||'').localeCompare(b.brand||'')).forEach(t=>{
-      const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+      const specParts=[t.diameter,t.drillDepth,t.coolantThrough==='Yes'?'💧 Coolant':'',t.tapType?(t.tapType.split('—')[0]||'').trim():'',t.grade].filter(Boolean);
+      const sub=t.description||specParts.join(' · ');
       const ls=locStr(t);
       html+=`<div class="inv-item" onclick="openDetail(${t.id})" style="cursor:pointer">
         <div class="cat-dot" style="background:${meta.color}"></div>
@@ -1372,12 +1391,15 @@ function openSlotModal(suId,slotNum){
 
 function toolCard(t){
   const meta=CAT_META[t.cat]||CAT_META.other;
-  const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+  const specParts=[t.diameter,t.drillDepth,t.coolantThrough==='Yes'?'💧 Coolant':'',t.tapType?(t.tapType.split('—')[0]||'').trim():'',t.grade].filter(Boolean);
+  const sub=t.description||specParts.join(' · ');
+  const matLine=t.material?'<div style="font-size:10px;color:var(--accent2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔩 '+t.material+'</div>':'';
   return`<div class="bin-tool-item" onclick="openDetail(${t.id})" style="cursor:pointer">
     <div class="bti-dot" style="background:${meta.color}"></div>
     <div class="bti-main">
       <div class="bti-pn">${t.brand||''} ${t.partNumber}</div>
       <div class="bti-sub">${sub||t.notes||'—'}</div>
+      ${matLine}
       <span class="bti-tag">${meta.icon} ${meta.label}</span>
     </div>
     <div class="bti-right"><div class="bti-qty">${t.qty}</div><div class="bti-pcs">pcs</div></div>
@@ -1399,6 +1421,11 @@ function openEdit(id){
   document.getElementById('eMinQty').value=t.minQty||'';
   document.getElementById('eMaxQty').value=t.maxQty||'';
   document.getElementById('eNotes').value=t.notes||'';
+  const _ed=document.getElementById('eDesc'); if(_ed) _ed.value=t.description||'';
+  const _em=document.getElementById('eMaterial'); if(_em) _em.value=t.material||'';
+  const _edd=document.getElementById('eDrillDepth'); if(_edd) _edd.value=t.drillDepth||'';
+  const _ec=document.getElementById('eCoolant'); if(_ec) _ec.value=t.coolantThrough||'';
+  const _ett=document.getElementById('eTapType'); if(_ett) _ett.value=t.tapType||'';
   populateSupplierSelects();
   if(t.supplierId)document.getElementById('eSupplier').value=t.supplierId;
   renderLocPicker('editLocRow',t.storageId||'',t.bin||'',t.section||'');
@@ -1431,6 +1458,11 @@ function saveEdit(){
     supplierId:parseInt(document.getElementById('eSupplier').value)||null,
     storageId:loc.storageId,bin:loc.bin,section:loc.section,
     notes:document.getElementById('eNotes').value.trim(),
+    description:document.getElementById('eDesc')?.value.trim()||'',
+    material:document.getElementById('eMaterial')?.value.trim()||'',
+    drillDepth:document.getElementById('eDrillDepth')?.value.trim()||'',
+    coolantThrough:document.getElementById('eCoolant')?.value||'',
+    tapType:document.getElementById('eTapType')?.value.trim()||'',
     updatedAt:new Date().toISOString(),
   };
   save('ts_tools',tools);updateCount();closeEditModal();renderInventory();showToast('✓ Saved');
@@ -1549,6 +1581,11 @@ function fillAIResult(p){
   document.getElementById('fGrade').value=p.grade||'';
   document.getElementById('fQty').value=p.qty||1;
   document.getElementById('fNotes').value=p.notes||'';
+  const _fd=document.getElementById('fDesc'); if(_fd) _fd.value=p.description||'';
+  const _fm=document.getElementById('fMaterial'); if(_fm) _fm.value=p.material||p.materialApplication||'';
+  const _fdd=document.getElementById('fDrillDepth'); if(_fdd) _fdd.value=p.drillDepth||p.drill_depth||'';
+  const _fc=document.getElementById('fCoolant'); if(_fc) _fc.value=p.coolantThrough||p.coolant_through||'';
+  const _ftt=document.getElementById('fTapType'); if(_ftt) _ftt.value=p.tapType||p.tap_type||'';
   const dEl=document.getElementById('fDiam');if(dEl)dEl.value=p.diameter||'';
   const shEl=document.getElementById('fShape');if(shEl)shEl.value=p.shape||'';
   const flEl=document.getElementById('fFlutes');if(flEl)flEl.value=p.extraField1||'';
@@ -1634,7 +1671,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '2.9';
+const APP_VERSION = '3.0';
 
 async function checkForUpdate() {
   const btn = document.getElementById('updateBtn');
@@ -2379,6 +2416,9 @@ function mapRow(row){
   const notes = (row['Notes']||'').trim();
   const coolant = (row['Coolant Through']||row['coolant_through']||'').trim();
   const desc = (row['Description']||row['description']||'').trim();
+  const material = (row['Material Application']||row['material_application']||row['material']||'').trim();
+  const drillDepth = (row['Drill Depth']||row['drill_depth']||'').trim();
+  const tapType = (row['Tap Type']||row['tap_type']||'').trim();
   
   // Map category names from spreadsheet to app cat keys
   const catMap = {
@@ -2387,7 +2427,7 @@ function mapRow(row){
     'Milling Inserts': 'milling', 'Taps': 'taps', 'Other': 'other'
   };
   
-  return { pn, brand, cat: catMap[cat]||'other', catLabel: cat, diam, grade, shape, notes, coolant, desc };
+  return { pn, brand, cat: catMap[cat]||'other', catLabel: cat, diam, grade, shape, notes, coolant, desc, material, drillDepth, tapType };
 }
 
 function normPn(s){ return (s||'').toLowerCase().replace(/[\s]/g,''); }
@@ -2417,6 +2457,10 @@ function previewImport(){
       if(mapped.diam && mapped.diam !== existing.diameter) changes.diameter = {from: existing.diameter||'—', to: mapped.diam};
       if(mapped.grade && mapped.grade !== existing.grade) changes.grade = {from: existing.grade||'—', to: mapped.grade};
       if(mapped.desc && mapped.desc !== existing.description) changes.description = {from: existing.description||'—', to: mapped.desc};
+      if(mapped.material && mapped.material !== (existing.material||'')) changes.material = {from: existing.material||'—', to: mapped.material};
+      if(mapped.drillDepth && mapped.drillDepth !== (existing.drillDepth||'')) changes.drillDepth = {from: existing.drillDepth||'—', to: mapped.drillDepth};
+      if(mapped.tapType && mapped.tapType !== (existing.tapType||'')) changes.tapType = {from: existing.tapType||'—', to: mapped.tapType};
+      if(mapped.coolant && mapped.coolant !== (existing.coolantThrough||'')) changes.coolantThrough = {from: existing.coolantThrough||'—', to: mapped.coolant};
       if(mapped.coolant && mapped.coolant !== (existing.coolantThrough||'')) changes.coolantThrough = {from: existing.coolantThrough||'—', to: mapped.coolant};
       
       if(Object.keys(changes).length > 0){
@@ -2495,6 +2539,9 @@ function applyImport(){
         if(ch.grade) tools[idx].grade = ch.grade.to;
         if(ch.description) tools[idx].description = ch.description.to;
         if(ch.coolantThrough) tools[idx].coolantThrough = ch.coolantThrough.to;
+        if(ch.material) tools[idx].material = ch.material.to;
+        if(ch.drillDepth) tools[idx].drillDepth = ch.drillDepth.to;
+        if(ch.tapType) tools[idx].tapType = ch.tapType.to;
         updCount++;
       }
     } else if(item.type === 'add'){
@@ -2508,6 +2555,9 @@ function applyImport(){
         shape: item.mapped.shape,
         description: item.mapped.desc,
         coolantThrough: item.mapped.coolant,
+          material: item.mapped.material||'',
+          drillDepth: item.mapped.drillDepth||'',
+          tapType: item.mapped.tapType||'',t,
         notes: item.mapped.notes,
         qty: item.qty,
         storageId: '', bin: '', section: '',
