@@ -209,18 +209,15 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 </style>
 </head>
 <body>
-
-<!-- ══ INTRO SCREEN ══ -->
 <div id="introScreen" style="position:fixed;inset:0;z-index:9999;background:#0d0f14;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
   <div id="introContent" style="text-align:center;opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease">
-    <div style="font-size:52px;margin-bottom:18px;display:block;animation:introSpin 2.5s ease-out forwards">⚙️</div>
+    <div style="font-size:52px;margin-bottom:18px;animation:introSpin 2.5s ease-out forwards">⚙️</div>
     <div style="font-family:'Syne',sans-serif;font-size:40px;font-weight:800;letter-spacing:-1px;margin-bottom:4px">TOOL<span style="color:#f0a500">STORE</span></div>
     <div id="introDivider" style="width:0;height:2px;background:linear-gradient(90deg,transparent,#f0a500,transparent);margin:12px auto;transition:width .9s ease .3s"></div>
     <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:.18em;text-transform:uppercase;margin-bottom:2px">by</div>
     <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:.08em">ENTEC RESOURCES</div>
-    <div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:8px;letter-spacing:.06em">Tool Inventory Management</div>
   </div>
-  <div style="position:absolute;bottom:56px;display:flex;gap:7px" id="introLoader">
+  <div style="position:absolute;bottom:56px;display:flex;gap:7px">
     <div style="width:6px;height:6px;border-radius:50%;background:#f0a500;animation:introDot 1.2s ease-in-out infinite"></div>
     <div style="width:6px;height:6px;border-radius:50%;background:#f0a500;animation:introDot 1.2s ease-in-out .2s infinite"></div>
     <div style="width:6px;height:6px;border-radius:50%;background:#f0a500;animation:introDot 1.2s ease-in-out .4s infinite"></div>
@@ -230,7 +227,6 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 @keyframes introSpin{0%{transform:rotate(0deg) scale(.7);opacity:0}40%{transform:rotate(200deg) scale(1.05);opacity:1}100%{transform:rotate(360deg) scale(1)}}
 @keyframes introDot{0%,80%,100%{transform:scale(.5);opacity:.25}40%{transform:scale(1);opacity:1}}
 </style>
-
 <header>
   <div class="logo">TOOL<span>STORE</span></div>
   <div style="text-align:right;line-height:1.3">
@@ -242,21 +238,27 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <button class="tab active" onclick="switchTab('scan')">📷<br>Scan</button>
   <button class="tab" onclick="switchTab('inventory')">📋<br>Stock</button>
   <button class="tab" onclick="switchTab('storage')">🗄️<br>Storage</button>
+  <button class="tab" onclick="switchTab('contacts')">👥<br>Contacts</button>
   <button class="tab" onclick="switchTab('settings')">⚙️<br>Settings</button>
 </div>
 
 <!-- ══ SCAN ══ -->
 <div class="page active" id="page-scan">
-  <div class="home-btns">
+  <div class="home-btns" style="grid-template-columns:1fr 1fr 1fr">
     <div class="home-btn active-mode" id="modeAddBtn" onclick="setMode('add')">
-      <span class="home-btn-icon">➕</span>
-      <div class="home-btn-name">Add Stock</div>
-      <div class="home-btn-sub">Scan new item</div>
+      <span class="home-btn-icon">📷</span>
+      <div class="home-btn-name">Scan</div>
+      <div class="home-btn-sub">Photo label</div>
+    </div>
+    <div class="home-btn" id="modeManualBtn" onclick="setMode('manual')">
+      <span class="home-btn-icon">⌨️</span>
+      <div class="home-btn-name">Manual</div>
+      <div class="home-btn-sub">Type it in</div>
     </div>
     <div class="home-btn" id="modeAdjBtn" onclick="setMode('adjust')">
       <span class="home-btn-icon">↕️</span>
-      <div class="home-btn-name">Adjust Stock</div>
-      <div class="home-btn-sub">Add or remove pcs</div>
+      <div class="home-btn-name">Adjust</div>
+      <div class="home-btn-sub">Add or remove</div>
     </div>
   </div>
   <div class="scan-zone" id="scanZone" onclick="document.getElementById('fileInput').click()">
@@ -266,6 +268,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   </div>
   <input type="file" id="fileInput" accept="image/*" capture="environment">
   <button class="scan-btn" id="analyseBtn" onclick="doScan()" disabled>Read Label with AI →</button>
+  <div id="manualForm" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:12px"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent);margin-bottom:12px;text-transform:uppercase">Manual Entry</div><div style="display:flex;flex-direction:column;gap:10px"><div class="field"><label>Brand</label><select id="mBrand" onchange="handleManualBrandChange()"><option value="">— Select brand —</option><option>Gühring</option><option>ISCAR</option><option>SECO</option><option>Sutton Tools</option><option>Sandvik Coromant</option><option>Kennametal</option><option>BIG Daishowa</option><option>Kyocera</option><option>Other…</option></select><div id="mNewBrandRow" style="display:none;margin-top:6px"><input type="text" id="mNewBrandInput" placeholder="Type brand name…" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box"></div></div><div class="field"><label>Tool Type</label><select id="mToolType"><option value="">— Select type —</option><option value="tap">Tap</option><option value="drill">Drill</option><option value="endmill">End Mill</option><option value="reamer">Reamer</option><option value="insert">Insert</option><option value="other">Other</option></select></div><div class="field"><label>Part Number (if known)</label><input type="text" id="mPartNum" placeholder="e.g. T903 2540 or leave blank"></div><div class="field"><label>Size / Thread</label><input type="text" id="mSize" placeholder="e.g. 1/4 BSPT or M10x1.5 or Ø12mm"></div><div class="field"><label>Any other details</label><input type="text" id="mExtra" placeholder="e.g. straight flute, HSS, gold ring…"></div><button class="scan-btn" style="margin-top:4px" onclick="doManualSearch()">🔍 Search &amp; Fill with AI →</button></div></div>
   <div class="thinking" id="thinking">
     <div class="spinner"></div>
     <div class="thinking-msg" id="thinkingMsg">Reading label…</div>
@@ -281,24 +284,12 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <div class="field-group">
       <div class="field"><label>Brand</label><select id="fBrand" onchange="handleBrandChange()"></select><div class="new-brand-row" id="newBrandRow"><input type="text" id="newBrandInput" placeholder="Type brand name…" oninput="saveNewBrand()"></div></div>
       <div class="field"><label>Part Number</label><input type="text" id="fPart" placeholder="e.g. SPGX11T3-C1"></div>
-      <div class="field"><label>Description</label><input type="text" id="fDesc" placeholder="e.g. Solid carbide end mill Ø12mm 4-flute"></div>
       <div id="catFields"></div>
       <div class="field-row">
         <div class="field"><label>Grade / Coating</label><input type="text" id="fGrade" placeholder="e.g. T400D"></div>
         <div class="field"><label>Qty (pcs)</label><input type="number" id="fQty" value="1" min="1"></div>
       </div>
-      <div class="field-row">
-        <div class="field"><label>OAL Length</label><input type="text" id="fOAL" placeholder="e.g. 75mm"></div>
-        <div class="field"><label>Reach / Flutes</label><input type="text" id="fReach" placeholder="e.g. 30mm / 4fl"></div>
-      </div>
-      <div class="field"><label>Tap Ring Colour</label><input type="text" id="fTapRing" placeholder="e.g. Gold, Blue, Bright"></div>
       <div class="field"><label>Notes</label><input type="text" id="fNotes" placeholder="EDP, lot, barcode…"></div>
-      <div class="field">
-        <label>Supplier</label>
-        <select id="fSupplier">
-          <option value="">— None —</option>
-        </select>
-      </div>
     </div>
     <!-- Dynamic location picker -->
     <div class="loc-section">
@@ -342,16 +333,14 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     </div>
   </div>
   <div class="inv-toolbar">
-    <input class="search-box" id="searchBox" type="search" placeholder="🔍 Search part number, brand, size…" oninput="renderInventory()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <input class="search-box" id="searchBox" type="search" placeholder="Search part, brand, size…" oninput="renderInventory()">
     <select class="cat-filter" id="invCatFilter" onchange="renderInventory()">
       <option value="">All</option>
-      <option value="drill">🔵 Drill Inserts</option>
-      <option value="milling">🟡 Milling</option>
-      <option value="turning">🟠 Turning</option>
+      <option value="drill">🔵 Drill</option>
+      <option value="milling">🟡 Mill</option>
+      <option value="turning">🟠 Turn</option>
       <option value="taps">🟢 Taps</option>
-      <option value="endmill">🔴 End Mills</option>
-      <option value="solid_drill">🟣 Solid Drills</option>
-      <option value="drill_holder">🔧 Drill Holders</option>
+      <option value="endmill">🔴 EM</option>
       <option value="other">⚪ Other</option>
     </select>
   </div>
@@ -362,40 +351,53 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <div class="page" id="page-storage">
   <div class="storage-header" style="display:flex;gap:8px;align-items:center">
     <select class="storage-select" id="storageUnitSelect" onchange="renderStorageView()" style="flex:1"></select>
+    <button onclick="openAddStorageModal()" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700">➕ Unit</button>
   </div>
+  <div id="storageUnitListInline" style="margin-bottom:8px"></div>
   <div id="storageView"></div>
+</div>
+
+<!-- ══ CONTACTS ══ -->
+<div class="page" id="page-contacts">
+  <div class="settings-section">
+    <div class="settings-title">Internal — Procurement</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6">Reorder requests are emailed to your procurement manager. CC is optional.</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Manager Name</div>
+      <input type="text" id="procName" placeholder="e.g. John Smith" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Email — To</div>
+      <input type="email" id="procEmail" placeholder="procurement@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
+    </div>
+    <div>
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Email — CC (optional)</div>
+      <input type="email" id="procCC" placeholder="manager@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
+    </div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">Suppliers</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">Supplier details appear on reorder requests so your procurement manager knows who to contact.</div>
+    <div id="supplierList"></div>
+    <button class="settings-btn" onclick="openSupplierModal()"><span class="settings-icon">➕</span> Add Supplier</button>
+  </div>
 </div>
 
 <!-- ══ SETTINGS ══ -->
 <div class="page" id="page-settings">
   <div class="settings-section">
-    <div class="settings-title">Storage Units</div>
-    <select class="storage-select" id="suSettingsSelect" onchange="showStorageUnitDetail()" style="width:100%;margin-bottom:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;-webkit-appearance:none">
-      <option value="">— Select a storage unit to edit —</option>
-    </select>
-    <div id="suSettingsDetail" style="display:none;margin-bottom:10px"></div>
-    <button class="settings-btn" onclick="openAddStorageModal()"><span class="settings-icon">➕</span> Add Storage Unit</button>
-  </div>
-  <div class="settings-section">
     <div class="settings-title">App Version</div>
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
       <div>
-        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800">v<span id="appVersionDisplay"></span></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Tool Store by Entec Resources</div>
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800">v<span id="appVersionDisplay"></span></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Tool Store · Entec Resources</div>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">Last updated</div>
-        <div style="font-size:12px;color:var(--accent);margin-top:2px" id="appVersionDate">—</div>
-      </div>
+      <div id="appVersionDate" style="font-size:11px;color:var(--accent);text-align:right"></div>
     </div>
   </div>
   <div class="settings-section">
     <div class="settings-title">API</div>
     <button class="settings-btn" onclick="resetApiKey()"><span class="settings-icon">🔑</span> Reset OpenAI API Key</button>
-  </div>
-  <div class="settings-section">
-    <div class="settings-title">Contacts</div>
-    <button class="settings-btn" onclick="openContactsModal()"><span class="settings-icon">👥</span> Procurement &amp; Suppliers</button>
   </div>
   <div class="settings-section">
     <div class="settings-title">Custom Brands</div>
@@ -455,33 +457,11 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
         <div class="type-btn" id="type-drawers" onclick="selectStorageType('drawers')"><span class="type-btn-icon">🗃️</span><div class="type-btn-name">Drawers</div></div>
       </div>
     </div>
-
-    <!-- Bins options -->
-    <div id="suBinsOptions">
-      <div class="edit-field"><label>Number of Bins</label><input type="number" id="suCount" value="48" min="1" max="200"></div>
-      <div class="edit-field" id="suSectionRow">
-        <label>Sections per Bin</label>
-        <select id="suSections"><option value="1">None (no sections)</option><option value="2" selected>A + B</option><option value="3">A + B + C</option></select>
-      </div>
+    <div class="edit-field"><label id="suCountLabel">Number of Bins</label><input type="number" id="suCount" value="48" min="1" max="200"></div>
+    <div id="suSectionRow" class="edit-field">
+      <label>Sections per Bin</label>
+      <select id="suSections"><option value="1">None (no sections)</option><option value="2" selected>A + B</option><option value="3">A + B + C</option></select>
     </div>
-
-    <!-- Shelves options -->
-    <div id="suShelvesOptions" style="display:none">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Give each shelf/slot a custom name — e.g. "Top Shelf", "Big Tub", "Parts Drawer".</div>
-      <div class="edit-field"><label>Number of Slots</label><input type="number" id="suShelfCount" value="6" min="1" max="50" oninput="renderShelfLabelInputs()"></div>
-      <div id="suShelfLabels" style="display:flex;flex-direction:column;gap:7px;margin-top:8px"></div>
-    </div>
-
-    <!-- Drawers options -->
-    <div id="suDrawersOptions" style="display:none">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Set how many drawers, then rows and columns inside each drawer. Each cell gets a location like D1·R2·C3.</div>
-      <div class="edit-field"><label>Number of Drawers</label><input type="number" id="suDrawerCount" value="6" min="1" max="30"></div>
-      <div class="field-row" style="padding:0;margin-bottom:10px">
-        <div class="edit-field"><label>Rows per Drawer</label><input type="number" id="suDrawerRows" value="2" min="1" max="10"></div>
-        <div class="edit-field"><label>Columns per Drawer</label><input type="number" id="suDrawerCols" value="4" min="1" max="20"></div>
-      </div>
-    </div>
-
     <div class="edit-field"><label>Description (optional)</label><input type="text" id="suDesc" placeholder="e.g. 48-bin PTB cabinet, drill inserts"></div>
     <button class="edit-save" onclick="saveStorageUnit()">✓ Save</button>
     <button class="modal-close" onclick="closeAddStorageModal()" style="margin-top:8px">Cancel</button>
@@ -496,25 +476,16 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <input type="hidden" id="editToolId">
     <div class="edit-field"><label>Brand</label><select id="eBrand" onchange="handleEditBrandChange()"></select><div class="new-brand-row" id="eNewBrandRow"><input type="text" id="eNewBrandInput" placeholder="Type brand name…"></div></div>
     <div class="edit-field"><label>Part Number</label><input type="text" id="ePart"></div>
-    <div class="edit-field"><label>Description</label><input type="text" id="eDesc" placeholder="Plain English description"></div>
     <div class="edit-field"><label>Size / Diameter</label><input type="text" id="eDiam"></div>
-    <div class="edit-field"><label>OAL Length</label><input type="text" id="eOAL" placeholder="e.g. 75mm"></div>
-    <div class="edit-field"><label>Tap Ring Colour</label><input type="text" id="eTapRing" placeholder="e.g. Gold, Blue, Bright"></div>
     <div class="edit-field"><label>Grade / Coating</label><input type="text" id="eGrade"></div>
     <div class="edit-field"><label>Quantity (pcs)</label><input type="number" id="eQty" min="0"></div>
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <div style="flex:1"><label style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:5px">Min Qty ⚠️</label><input type="number" id="eMinQty" min="0" placeholder="e.g. 5" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none"></div>
       <div style="flex:1"><label style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:5px">Max Qty 📦</label><input type="number" id="eMaxQty" min="0" placeholder="e.g. 20" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none"></div>
     </div>
-
+    <div class="edit-field"><label>Supplier</label><select id="eSupplier" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none"></select></div>
     <div class="edit-field"><label>Location</label><div id="editLocRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div></div>
     <div class="edit-field"><label>Notes</label><input type="text" id="eNotes"></div>
-    <div class="edit-field">
-      <label>Supplier</label>
-      <select id="eSupplier" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;-webkit-appearance:none">
-        <option value="">— None —</option>
-      </select>
-    </div>
     <button class="edit-save" onclick="saveEdit()">✓ Save Changes</button>
     <button class="edit-delete" onclick="deleteToolFromEdit()">🗑 Delete This Item</button>
     <button class="modal-close" onclick="closeEditModal()" style="margin-top:8px">Cancel</button>
@@ -540,13 +511,11 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <div class="modal-bg" id="inStockModalBg">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div id="inStockModalTitle" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px">⚠️ Already in Stock</div>
-    <div id="inStockModalSubtitle" style="font-size:12px;color:var(--muted);margin-bottom:12px">This item is already in stock.</div>
-    <div id="inStockDetails" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.7"></div>
-    <div style="display:flex;gap:10px;flex-direction:column">
-      <button id="inStockAdjBtn" onclick="goToAdjustFromInStock()" style="width:100%;padding:13px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">↕ Adjust Stock</button>
-      <button id="inStockNoBtn" onclick="closeInStockModal()" style="display:none;width:100%;padding:13px;border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;border:1px solid var(--border);cursor:pointer">✕ No, different item — Add as New</button>
-      <button onclick="closeInStockModal()" style="width:100%;padding:11px;border-radius:var(--radius);background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;border:1px solid var(--border);cursor:pointer">Cancel</button>
+    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px">⚠️ Already in Stock</div>
+    <div id="inStockDetails" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.7"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="goToAdjustFromInStock()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer">↕ Adjust Stock</button>
+      <button onclick="closeInStockModal()" style="flex:1;padding:13px;border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;border:1px solid var(--border);cursor:pointer">OK</button>
     </div>
   </div>
 </div>
@@ -600,33 +569,6 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     </div>
   </div>
 </div>
-<!-- Contacts Modal -->
-<div class="modal-bg" id="contactsModalBg" onclick="closeContactsModal(event)">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">👥 Contacts</div>
-    <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Procurement</div>
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px">
-      <div>
-        <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Manager Name</div>
-        <input type="text" id="procName" placeholder="e.g. John Smith" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Email — To</div>
-        <input type="email" id="procEmail" placeholder="procurement@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Email — CC (optional)</div>
-        <input type="email" id="procCC" placeholder="manager@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
-      </div>
-    </div>
-    <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Suppliers</div>
-    <div id="supplierList" style="margin-bottom:10px"></div>
-    <button class="settings-btn" onclick="openSupplierModal()" style="margin-bottom:10px"><span class="settings-icon">➕</span> Add Supplier</button>
-    <button onclick="closeContactsModal()" class="modal-close">Done</button>
-  </div>
-</div>
-
 <!-- Supplier Modal -->
 <div class="modal-bg" id="supplierModalBg" onclick="closeSupplierModal(event)">
   <div class="modal">
@@ -717,18 +659,17 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <script>
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const CAT_META={
-  drill:       {icon:'🔵',label:'Drill Inserts',   color:'#3b82f6'},
-  milling:     {icon:'🟡',label:'Milling Inserts',  color:'#eab308'},
-  turning:     {icon:'🟠',label:'Turning Inserts',  color:'#f97316'},
-  taps:        {icon:'🟢',label:'Taps',             color:'#22c55e'},
-  endmill:     {icon:'🔴',label:'End Mills',        color:'#ef4444'},
-  solid_drill: {icon:'🟣',label:'Solid Drills',     color:'#a855f7'},
-  drill_holder:{icon:'🔧',label:'Drill Holders',    color:'#8b5cf6'},
-  other:       {icon:'⚪',label:'Other',            color:'#6b7899'},
+  drill:  {icon:'🔵',label:'Drill Inserts',  color:'#3b82f6'},
+  milling:{icon:'🟡',label:'Milling Inserts', color:'#eab308'},
+  turning:{icon:'🟠',label:'Turning Inserts', color:'#f97316'},
+  taps:   {icon:'🟢',label:'Taps',            color:'#22c55e'},
+  endmill:{icon:'🔴',label:'End Mills',       color:'#ef4444'},
+  solid_drill:{icon:'🟣',label:'Solid Drills',color:'#a855f7'},
+  drill_holder:{icon:'🔧',label:'Drill Holders',color:'#8b5cf6'},
+  other:  {icon:'⚪',label:'Other',           color:'#6b7899'},
 };
 const CAT_KEYS=Object.keys(CAT_META);
-const APP_VERSION='2.7';
-const DEFAULT_BRANDS=['Gühring','ISCAR','SECO','Sandvik Coromant','Kennametal','Walter','Mitsubishi','Sumitomo','Kyocera'];
+const DEFAULT_BRANDS=['Gühring','ISCAR','SECO','Sutton Tools','Sandvik Coromant','Kennametal','Walter','BIG Daishowa','Mitsubishi','Sumitomo','Kyocera'];
 const TYPE_META={
   bins:   {icon:'🗄️',label:'Bins',    slotLabel:'Bin',     hasSection:true},
   shelves:{icon:'📚',label:'Shelves', slotLabel:'Shelf',   hasSection:false},
@@ -768,23 +709,12 @@ tools=tools.map(t=>{
 function getSU(id){return storageUnits.find(s=>s.id===id);}
 function locStr(t){
   if(!t.storageId)return '';
-  const su=getSU(t.storageId);if(!su)return '';
-  if(su.type==='bins'){
-    const slot=t.bin?`Bin ${t.bin}`:'';
-    const sec=t.section?` · ${t.section}`:'';
-    return `${su.name}${slot?' · '+slot:''}${sec}`;
-  } else if(su.type==='shelves'){
-    // bin field stores slot index (1-based), use slotLabels if available
-    const idx=parseInt(t.bin)-1;
-    const label=su.slotLabels&&su.slotLabels[idx]?su.slotLabels[idx]:`Slot ${t.bin}`;
-    return t.bin?`${su.name} · ${label}`:su.name;
-  } else if(su.type==='drawers'){
-    // bin=drawer num, section=R{row}C{col}
-    const d=t.bin?`Drawer ${t.bin}`:'';
-    const rc=t.section?` · ${t.section}`:'';
-    return `${su.name}${d?' · '+d:''}${rc}`;
-  }
-  return su.name;
+  const su=getSU(t.storageId);
+  if(!su)return '';
+  const tm=TYPE_META[su.type]||TYPE_META.bins;
+  const slot=t.bin?`${tm.slotLabel} ${t.bin}`:'';
+  const sec=su.type==='bins'&&t.section?` · ${t.section}`:'';
+  return `${su.name}${slot?' · '+slot:''}${sec}`;
 }
 
 // ── MODE ──────────────────────────────────────────────────────────────────────
@@ -792,6 +722,22 @@ function setMode(mode){
   currentMode=mode;
   document.getElementById('modeAddBtn').classList.toggle('active-mode',mode==='add');
   document.getElementById('modeAdjBtn').classList.toggle('active-mode',mode==='adjust');
+  const manBtn=document.getElementById('modeManualBtn');
+  if(manBtn)manBtn.classList.toggle('active-mode',mode==='manual');
+  const mf=document.getElementById('manualForm');
+  const sz=document.getElementById('scanZone');
+  const ab=document.getElementById('analyseBtn');
+  if(mode==='manual'){
+    if(mf)mf.style.display='block';
+    if(sz)sz.style.display='none';
+    if(ab)ab.style.display='none';
+    document.getElementById('resultCard').classList.remove('show');
+    document.getElementById('adjustCard').classList.remove('show');
+    return;
+  }
+  if(mf)mf.style.display='none';
+  if(sz)sz.style.display='block';
+  if(ab)ab.style.display='block';
   const isAdj=mode==='adjust';
   document.getElementById('scanPrompt').textContent=isAdj?'Scan box to find in stock':'Tap to photograph label';
   document.getElementById('scanHint').textContent=isAdj?'AI will match to existing items':'Point camera at packaging';
@@ -834,29 +780,14 @@ function renderLocPicker(containerId, currentStorageId='', currentBin='', curren
   const su=getSU(currentStorageId);
   let slotSel='',secSel='';
   if(su){
-    if(su.type==='bins'){
-      slotSel=`<div class="loc-field"><div class="loc-field-label">Bin</div><input class="loc-sel" type="number" id="${containerId}_bin" min="1" max="${su.count}" placeholder="—" style="width:65px" value="${currentBin}"></div>`;
-      if(su.sections>1){
-        const opts=['','A','B'];if(su.sections>=3)opts.push('C');
-        secSel=`<div class="loc-field"><div class="loc-field-label">Section</div><select class="loc-sel" id="${containerId}_sec" style="width:65px">${opts.map(o=>`<option value="${o}"${o===currentSection?' selected':''}>${o||'—'}</option>`).join('')}</select></div>`;
-      }
-    } else if(su.type==='shelves'){
-      // dropdown of custom slot labels
-      const labels=su.slotLabels||Array.from({length:su.count},(_, i)=>`Slot ${i+1}`);
-      slotSel=`<div class="loc-field"><div class="loc-field-label">Slot</div><select class="loc-sel" id="${containerId}_bin" style="min-width:120px">
-        <option value="">— Select —</option>
-        ${labels.map((l,i)=>`<option value="${i+1}"${String(i+1)===String(currentBin)?' selected':''}>${l}</option>`).join('')}
+    const tm=TYPE_META[su.type]||TYPE_META.bins;
+    slotSel=`<div class="loc-field"><div class="loc-field-label">${tm.slotLabel}</div><input class="loc-sel" type="number" id="${containerId}_bin" min="1" max="${su.count}" placeholder="—" style="width:65px" value="${currentBin}"></div>`;
+    if(su.type==='bins'&&su.sections>1){
+      const opts=['','A','B'];
+      if(su.sections>=3)opts.push('C');
+      secSel=`<div class="loc-field"><div class="loc-field-label">Section</div><select class="loc-sel" id="${containerId}_sec" style="width:65px">
+        ${opts.map(o=>`<option value="${o}"${o===currentSection?' selected':''}>${o||'—'}</option>`).join('')}
       </select></div>`;
-    } else if(su.type==='drawers'){
-      // drawer number + row + col
-      slotSel=`<div class="loc-field"><div class="loc-field-label">Drawer</div><input class="loc-sel" type="number" id="${containerId}_bin" min="1" max="${su.count}" placeholder="—" style="width:58px" value="${currentBin}"></div>`;
-      // parse existing section R{r}C{c}
-      const rm=currentSection.match(/R(\d+)C(\d+)/);
-      const cr=rm?rm[1]:'',cc=rm?rm[2]:'';
-      const rowOpts=Array.from({length:su.rows||2},(_, i)=>i+1).map(r=>`<option value="${r}"${String(r)===cr?' selected':''}>${r}</option>`).join('');
-      const colOpts=Array.from({length:su.cols||4},(_, i)=>i+1).map(c=>`<option value="${c}"${String(c)===cc?' selected':''}>${c}</option>`).join('');
-      secSel=`<div class="loc-field"><div class="loc-field-label">Row</div><select class="loc-sel" id="${containerId}_drow" style="width:56px"><option value="">—</option>${rowOpts}</select></div>
-              <div class="loc-field"><div class="loc-field-label">Col</div><select class="loc-sel" id="${containerId}_dcol" style="width:56px"><option value="">—</option>${colOpts}</select></div>`;
     }
   }
   container.innerHTML=suSel+slotSel+secSel;
@@ -868,17 +799,11 @@ function updateLocPicker(containerId){
 }
 
 function getLocValues(containerId){
-  const storageId=document.getElementById(containerId+'_su')?.value||'';
-  const bin=document.getElementById(containerId+'_bin')?.value||'';
-  const su=getSU(storageId);
-  let section='';
-  if(su?.type==='bins') section=document.getElementById(containerId+'_sec')?.value||'';
-  else if(su?.type==='drawers'){
-    const r=document.getElementById(containerId+'_drow')?.value||'';
-    const c=document.getElementById(containerId+'_dcol')?.value||'';
-    if(r&&c) section=`R${r}C${c}`;
-  }
-  return{storageId,bin,section};
+  return{
+    storageId:document.getElementById(containerId+'_su')?.value||'',
+    bin:document.getElementById(containerId+'_bin')?.value||'',
+    section:document.getElementById(containerId+'_sec')?.value||'',
+  };
 }
 
 // ── BRANDS ────────────────────────────────────────────────────────────────────
@@ -905,25 +830,10 @@ function renderBrandList(){
 function selectStorageType(type){
   newStorageType=type;
   ['bins','shelves','drawers'].forEach(t=>document.getElementById('type-'+t).classList.toggle('selected',t===type));
-  document.getElementById('suBinsOptions').style.display=type==='bins'?'block':'none';
-  document.getElementById('suShelvesOptions').style.display=type==='shelves'?'block':'none';
-  document.getElementById('suDrawersOptions').style.display=type==='drawers'?'block':'none';
-  if(type==='shelves') renderShelfLabelInputs();
-}
-
-function renderShelfLabelInputs(){
-  const count=parseInt(document.getElementById('suShelfCount').value)||6;
-  const container=document.getElementById('suShelfLabels');
-  // preserve existing values
-  const existing=[];
-  container.querySelectorAll('input').forEach(i=>existing.push(i.value));
-  container.innerHTML='';
-  for(let i=0;i<count;i++){
-    const div=document.createElement('div');
-    div.style.cssText='display:flex;align-items:center;gap:8px';
-    div.innerHTML=`<span style="font-size:11px;color:var(--muted);min-width:20px;text-align:right">${i+1}</span><input type="text" placeholder="e.g. Top Shelf, Big Tub, Open Shelf" value="${existing[i]||''}" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none">`;
-    container.appendChild(div);
-  }
+  const tm=TYPE_META[type];
+  document.getElementById('suCountLabel').textContent=`Number of ${tm.label}`;
+  document.getElementById('suSectionRow').style.display=type==='bins'?'flex':'none';
+  document.getElementById('suCount').value=type==='bins'?48:type==='shelves'?6:8;
 }
 
 function openAddStorageModal(editId=null){
@@ -933,31 +843,13 @@ function openAddStorageModal(editId=null){
     const su=getSU(editId);if(!su)return;
     document.getElementById('suName').value=su.name;
     document.getElementById('suDesc').value=su.desc||'';
+    document.getElementById('suCount').value=su.count;
+    document.getElementById('suSections').value=su.sections||2;
     selectStorageType(su.type);
     newStorageType=su.type;
-    if(su.type==='bins'){
-      document.getElementById('suCount').value=su.count||48;
-      document.getElementById('suSections').value=su.sections||2;
-    } else if(su.type==='shelves'){
-      document.getElementById('suShelfCount').value=su.slotLabels?.length||6;
-      renderShelfLabelInputs();
-      // restore saved labels
-      if(su.slotLabels){
-        const inputs=document.getElementById('suShelfLabels').querySelectorAll('input');
-        su.slotLabels.forEach((l,i)=>{if(inputs[i])inputs[i].value=l;});
-      }
-    } else if(su.type==='drawers'){
-      document.getElementById('suDrawerCount').value=su.count||6;
-      document.getElementById('suDrawerRows').value=su.rows||2;
-      document.getElementById('suDrawerCols').value=su.cols||4;
-    }
   }else{
     document.getElementById('suName').value='';
     document.getElementById('suDesc').value='';
-    document.getElementById('suShelfCount').value=6;
-    document.getElementById('suDrawerCount').value=6;
-    document.getElementById('suDrawerRows').value=2;
-    document.getElementById('suDrawerCols').value=4;
     document.getElementById('suCount').value=48;
     document.getElementById('suSections').value=2;
     selectStorageType('bins');
@@ -969,19 +861,13 @@ function saveStorageUnit(){
   const name=document.getElementById('suName').value.trim();
   if(!name){showToast('Name required',true);return;}
   const editId=document.getElementById('editStorageId').value;
-  let su={id:editId||('su'+Date.now()),name,type:newStorageType,desc:document.getElementById('suDesc').value.trim()};
-  if(newStorageType==='bins'){
-    su.count=parseInt(document.getElementById('suCount').value)||48;
-    su.sections=parseInt(document.getElementById('suSections').value)||2;
-  } else if(newStorageType==='shelves'){
-    const inputs=document.getElementById('suShelfLabels').querySelectorAll('input');
-    su.slotLabels=[...inputs].map((inp,i)=>inp.value.trim()||`Slot ${i+1}`);
-    su.count=su.slotLabels.length;
-  } else if(newStorageType==='drawers'){
-    su.count=parseInt(document.getElementById('suDrawerCount').value)||6;
-    su.rows=parseInt(document.getElementById('suDrawerRows').value)||2;
-    su.cols=parseInt(document.getElementById('suDrawerCols').value)||4;
-  }
+  const su={
+    id:editId||('su'+Date.now()),
+    name,type:newStorageType,
+    count:parseInt(document.getElementById('suCount').value)||10,
+    sections:parseInt(document.getElementById('suSections').value)||2,
+    desc:document.getElementById('suDesc').value.trim(),
+  };
   if(editId){const idx=storageUnits.findIndex(s=>s.id===editId);if(idx>=0)storageUnits[idx]=su;else storageUnits.push(su);}
   else storageUnits.push(su);
   save('ts_storage',storageUnits);
@@ -1003,48 +889,44 @@ function deleteStorageUnit(id){
 function closeAddStorageModal(e){if(!e||e.target===document.getElementById('addStorageModalBg'))document.getElementById('addStorageModalBg').classList.remove('show');}
 
 function renderStorageUnitList(){
-  // Populate the settings select dropdown
-  const sel=document.getElementById('suSettingsSelect');
-  if(sel){
-    const cur=sel.value;
-    sel.innerHTML='<option value="">— Select a storage unit to edit —</option>'+
-      storageUnits.map(su=>{
-        const tm=TYPE_META[su.type]||TYPE_META.bins;
-        const count=tools.filter(t=>t.storageId===su.id).length;
-        return `<option value="${su.id}">${tm.icon} ${su.name} · ${count} items</option>`;
-      }).join('');
-    if(cur) sel.value=cur;
-  }
-  // Also refresh detail if one is showing
-  showStorageUnitDetail();
+  const el=document.getElementById('storageUnitList');if(!el)return;
+  if(!storageUnits.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0 10px">No storage units yet</div>';return;}
+  el.innerHTML=storageUnits.map(su=>{
+    const tm=TYPE_META[su.type]||TYPE_META.bins;
+    const toolCount=tools.filter(t=>t.storageId===su.id).length;
+    return`<div class="su-card">
+      <div class="su-card-top">
+        <div class="su-icon">${tm.icon}</div>
+        <div class="su-name">${su.name}</div>
+        <div class="su-type">${tm.label}</div>
+      </div>
+      <div class="su-detail">${su.count} ${tm.label.toLowerCase()}${su.type==='bins'&&su.sections>1?' · Sections A-'+['','B','C'][su.sections-1]:''}${su.desc?' · '+su.desc:''}</div>
+      <div class="su-detail" style="margin-top:4px">${toolCount} item${toolCount!==1?'s':''} stored here</div>
+      <div class="su-actions">
+        <button class="su-btn" onclick="openAddStorageModal('${su.id}')">✏️ Edit</button>
+        <button class="su-btn del" onclick="deleteStorageUnit('${su.id}')">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function showStorageUnitDetail(){
-  const sel=document.getElementById('suSettingsSelect');
-  const detail=document.getElementById('suSettingsDetail');
-  if(!sel||!detail) return;
-  const id=sel.value;
-  if(!id){detail.style.display='none';return;}
-  const su=getSU(id);
-  if(!su){detail.style.display='none';return;}
-  const tm=TYPE_META[su.type]||TYPE_META.bins;
-  const toolCount=tools.filter(t=>t.storageId===su.id).length;
-  detail.style.display='block';
-  detail.innerHTML=`<div class="su-card">
-    <div class="su-card-top">
-      <div class="su-icon">${tm.icon}</div>
-      <div class="su-name">${su.name}</div>
-      <div class="su-type">${tm.label}</div>
-    </div>
-    <div class="su-detail">${su.count} ${tm.label.toLowerCase()}${su.type==='bins'&&su.sections>1?' · Sections A-'+['','B','C'][su.sections-1]:''}${su.desc?' · '+su.desc:''}</div>
-    <div class="su-detail" style="margin-top:4px">${toolCount} item${toolCount!==1?'s':''} stored here</div>
-    <div class="su-actions">
-      <button class="su-btn" onclick="openAddStorageModal('${su.id}')">✏️ Edit</button>
-      <button class="su-btn del" onclick="deleteStorageUnit('${su.id}')">🗑 Delete</button>
-    </div>
-  </div>`;
+function renderStorageUnitListInline(){
+  const el=document.getElementById('storageUnitListInline');if(!el)return;
+  if(!storageUnits.length){el.innerHTML='';return;}
+  el.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 2px">` +
+    storageUnits.map(su=>{
+      const tm=TYPE_META[su.type]||TYPE_META.bins;
+      const toolCount=tools.filter(t=>t.storageId===su.id).length;
+      return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 11px;display:flex;align-items:center;gap:8px;min-width:0">
+        <span style="font-size:16px">${tm.icon}</span>
+        <div style="min-width:0">
+          <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${su.name}</div>
+          <div style="font-size:10px;color:var(--muted)">${toolCount} items</div>
+        </div>
+        <button onclick="openAddStorageModal('${su.id}')" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10px;color:var(--muted);cursor:pointer">✏️</button>
+      </div>`;
+    }).join('') + `</div>`;
 }
-
 
 function populateStorageSelect(){
   const sel=document.getElementById('storageUnitSelect');if(!sel)return;
@@ -1081,6 +963,61 @@ function getApiKey(){
 }
 function resetApiKey(){localStorage.removeItem('ts_openai_key');showToast('API key cleared');}
 
+function handleManualBrandChange(){
+  const v=document.getElementById('mBrand').value;
+  document.getElementById('mNewBrandRow').style.display=v==='Other...'?'block':'none';
+}
+
+async function doManualSearch(){
+  const brandSel=document.getElementById('mBrand').value;
+  const brand=brandSel==='Other...'?document.getElementById('mNewBrandInput').value.trim():brandSel;
+  const toolType=document.getElementById('mToolType').value;
+  const partNum=document.getElementById('mPartNum').value.trim();
+  const size=document.getElementById('mSize').value.trim();
+  const extra=document.getElementById('mExtra').value.trim();
+  if(!brand&&!partNum&&!size){showToast('Enter at least a brand and size',true);return;}
+  const apiKey=getApiKey();if(!apiKey){showToast('No API key',true);return;}
+  document.getElementById('thinking').classList.add('show');
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('thinkingMsg').textContent='Searching manufacturer database...';
+  const parts=[];
+  if(brand) parts.push('Brand: '+brand);
+  if(toolType) parts.push('Tool type: '+toolType);
+  if(partNum) parts.push('Part number: '+partNum);
+  if(size) parts.push('Size/thread: '+size);
+  if(extra) parts.push('Details: '+extra);
+  const query=parts.join(', ');
+  const prompt='You are a machining tool expert. Find the exact tool: '+query+'. '+
+    'SUTTON TOOLS (Australian, blue S logo): T=taps (T903=straight flute, T502=spiral flute), D=drills, E=end mills. Thread always imperial e.g. 1/4 BSP, 1/8 BSPT - NEVER convert to metric. HSGT=High Speed Ground Thread. '+
+    'ISCAR: ICP/ICM/HCP=drill_insert, APKT/SEHT/OFMT=milling_insert, CNMG/TNMG/DCMT=turning_insert, IC908/IC528=grades. '+
+    'GUHRING: 5725/5726=powertap HSS-E, GOLDRING=gold oxide, 5511/5514=solid drill, 5516/5525/5537/5562/5584/5735=end mill. '+
+    'CRITICAL: Never convert imperial thread sizes to metric. '+
+    'Return ONLY raw JSON: {"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or solid_drill or drill_holder or other","categoryConfidence":"certain or uncertain","brand":"'+brand+'","partNumber":"best part number","diameter":"","oal":"","flutes":"","grade":"coating only","cornerRadius":"","tapRing":"","tapThread":"exact thread size","description":"clear English description","notes":"","qty":1,"confidence":"high or medium or low"}';
+  try{
+    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'gpt-4o',max_tokens:600,messages:[{role:'user',content:prompt}]})
+    });
+    if(!resp.ok){showToast('Error '+resp.status,true);document.getElementById('thinking').classList.remove('show');return;}
+    const data=await resp.json();
+    const raw=data.choices?.[0]?.message?.content||'';
+    const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+    let p;try{p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
+    catch{p={category:'other',brand:brand,partNumber:partNum,diameter:size,description:'',confidence:'low'};}
+    if(partNum&&!p.partNumber) p.partNumber=partNum;
+    if(size&&!p.tapThread&&!p.diameter) p.diameter=size;
+    if(brand&&!p.brand) p.brand=brand;
+    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',solid_drill:'solid_drill',drill_holder:'drill_holder',other:'other'};
+    currentCat=catMap[p.category]||catMap[toolType]||'other';
+    renderCatTags();renderCatFields();
+    document.getElementById('thinking').classList.remove('show');
+    fillAIResult(p);
+  }catch(err){
+    document.getElementById('thinking').classList.remove('show');
+    showToast('Network error',true);
+  }
+}
+
 function doScan(){currentMode==='adjust'?analyseForAdjust():analyseImage();}
 
 // ── ADD SCAN ──────────────────────────────────────────────────────────────────
@@ -1089,143 +1026,68 @@ async function analyseImage(){
   const apiKey=getApiKey();if(!apiKey){showToast('No API key',true);return;}
   document.getElementById('thinking').classList.add('show');
   document.getElementById('analyseBtn').disabled=true;
-
-  // ── STEP 1: Read part number only ────────────────────────────────────────
-  document.getElementById('thinkingMsg').textContent='Reading part number…';
-  let partData = null;
+  const msgs=['Reading label…','Identifying brand…','Extracting details…','Detecting category…'];
+  let mi=0;const ticker=setInterval(()=>{document.getElementById('thinkingMsg').textContent=msgs[mi++%msgs.length];},900);
   try{
-    const r1=await fetch('https://api.openai.com/v1/chat/completions',{
+    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-      body:JSON.stringify({model:'gpt-4o',max_tokens:200,messages:[{role:'user',content:[
+      body:JSON.stringify({model:'gpt-4o',max_tokens:700,messages:[{role:'user',content:[
         {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
-        {type:'text',text:`Look at this tool label. Extract ONLY the part/order number and brand.
-
-Rules:
-- Part number is usually after "No" or "N°" symbol, or the largest number on the label
-- Brand: look for Gühring (yellow label), ISCAR, SECO, BIG Daishowa, Kyocera, Magic Drill
-- GEWINDEBOHRER = Gühring tap (brand=Gühring)
-- WECHSELPLATTENHALTER = Gühring drill holder (brand=Gühring)
-- K/P numbers are NOT the part number — ignore them
-- HSS-E numbers (e.g. 22343540) are NOT part numbers — ignore them
-- EDP numbers are NOT part numbers — ignore them
-- The part number usually looks like: 5725-4,826 or ICP 0531 or SPGX11T3-C1
-
-Return ONLY raw JSON:
-{"brand":"","partNumber":"exact part number only","qty":1,"tapRing":"if visible: Gold/Blue/Bright/Red ring colour on the tool, else empty","tapThread":"if this is a tap, copy the thread designation EXACTLY as printed e.g. 1/8 BSPT or 1/16 NPT or M10x1.5 or #10-24 UNC — do NOT convert to metric"}`}
+        {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from ISO code last 2 digits or label","extraField1":"pitch for taps / flutes for endmills","extraField2":"tap type","notes":"EDP, lot, barcode ref","qty":1,"confidence":"high or medium or low"}\n\nSet categoryConfidence=uncertain ONLY when you genuinely cannot tell if an insert is milling vs turning (e.g. CN/BN shapes that could be used in either a face mill body or a lathe tool). In all other cases set categoryConfidence=certain.\n\n=== BRAND IDENTIFICATION ===\nISCAR: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT → brand=ISCAR\nSECO: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D/TP2500/MF5 → brand=SECO\nGühring: 4112, 4115, 4229, 5516, 5525, 5537, 5735, RT100, SL-RATIOFRAESER → brand=Gühring\nBIG Daishowa: CN, BN prefix or label says BIG DAISHOWA SEIKI → brand=BIG Daishowa\n\n=== GÜHRING SPECIFIC ===\nGühring labels use German: A=diameter, Stück=pieces, SL-RATIOFRAESER=end mill\nPart numbers 5735, 5516, 5525, 5537, 5262 = solid carbide end mills → category=end_mill\nOn Gühring labels diameter is shown as e.g. A 12,0 — the number after A is the diameter in mm\nDIN 6527L = 4-flute solid carbide end mill\nDIN 6535 = end mill shank standard\n\n=== ISCAR SPECIFIC ===\nICP, ICM, HCP, IDI = drill inserts (go in Sumocham/Chamdrill drill body) → category=drill_insert\nSPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG = turning inserts → category=turning_insert\nGrades: IC908, IC528, IC830, IC807 = ISCAR\n\n=== SECO SPECIFIC ===\nSPGX, RPHT, RCMT, RCGX = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT = turning inserts → category=turning_insert\nSD, MDN, MEGA prefix = drills/end mills\nGrades: T400D, TP2500, TP1500, MF5 = SECO\n\n=== BIG DAISHOWA SPECIFIC ===\nCN prefix inserts (e.g. CN0906) used in face mill bodies → categoryConfidence=uncertain (could be milling or turning)\nBN prefix = ball nose inserts\nGrade ACM250F, ACM300 = BIG Daishowa\n\n=== CATEGORY RULES ===\nDRILL INSERT: ICP, ICM, HCP, IDI, Gühring 4112/4115/4229. Always have cutting diameter. Go into drill body.\nMILLING INSERT: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT, RCMT. Round/square/octagonal.\nTURNING INSERT: Lathe/boring bar inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG. Triangle/diamond/rhombic.\nTAP: ONLY if thread designation shown e.g. M6x1.0, M10x1.5, UNC, UNF. Never confuse with end mills.\nEND MILL: Solid carbide, has flutes. Gühring 5735/5516/5525/5537, SL-RATIOFRAESER, slot drills, ball nose, corner radius mills. 2-flute slot drills = end_mill.\nOTHER: reamers, boring bars, indexable drills (not insert), anything else.\n\n=== ISO CORNER RADIUS ===\nISO code last 2 digits = corner radius x 0.1mm: 02=R0.2, 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6\nGühring end mills: read corner radius from label (R-RF1 = sharp corner/no radius)\n\nBe exact with part numbers and diameters. Use web knowledge for unknown brands.`}
       ]}]})
     });
-    if(r1.ok){
-      const d1=await r1.json();
-      const raw1=d1.choices?.[0]?.message?.content||'';
-      const c1=raw1.replace(/\`\`\`json\s*/g,'').replace(/\`\`\`\s*/g,'').trim();
-      partData=JSON.parse((c1.match(/\{[\s\S]*\}/)||[c1])[0]);
+    clearInterval(ticker);
+    if(!resp.ok){
+      if(resp.status===401){localStorage.removeItem('ts_openai_key');showToast('Invalid key — cleared',true);}
+      else if(resp.status===429)showToast('Rate limit — retry shortly',true);
+      else showToast('Error '+resp.status,true);
+      document.getElementById('thinking').classList.remove('show');
+      document.getElementById('analyseBtn').disabled=false;return;
     }
-  }catch(e){console.warn('Step 1 failed',e);}
+    const data=await resp.json();
+    const raw=data.choices?.[0]?.message?.content||'';
+    let p;try{const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
+    catch{p={category:'other',brand:'',partNumber:'',diameter:'',shape:'',grade:'',notes:'',qty:1,confidence:'low'};}
 
-  if(!partData?.partNumber){
+    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',other:'other'};
+    currentCat=catMap[p.category]||'other';
+    renderCatTags();renderCatFields();
+
+    // If AI is uncertain about milling vs turning, ask user
+    if(p.categoryConfidence==='uncertain'){
+      pendingAIResult=p;
+      document.getElementById('catConfirmDetails').innerHTML=
+        `<b>${p.brand||'Unknown brand'} ${p.partNumber||''}</b><br>`+
+        `${p.diameter||''} ${p.grade||''}<br>`+
+        `<span style="color:var(--muted);font-size:11px">AI suggested: ${CAT_META[currentCat]?.label||currentCat}</span>`;
+      document.getElementById('thinking').classList.remove('show');
+      document.getElementById('analyseBtn').disabled=false;
+      document.getElementById('catConfirmModalBg').classList.add('show');
+      return;
+    }
+
+    populateBrandSelect('fBrand',p.brand);
+    // Fill all fields via shared function
+    fillAIResult(p);
+
+  }catch(err){
+    clearInterval(ticker);
     document.getElementById('thinking').classList.remove('show');
     document.getElementById('analyseBtn').disabled=false;
-    showToast('Could not read part number',true);
-    return;
+    showToast('Network error',true);
   }
-
-  // ── STEP 2: Look up on manufacturer website ───────────────────────────────
-  document.getElementById('thinkingMsg').textContent=`Looking up ${partData.partNumber} on manufacturer site…`;
-  
-  const brand=(partData.brand||'').toLowerCase();
-  let searchSite='';
-  if(brand.includes('gühring')||brand.includes('guhring')) searchSite='guhring.com';
-  else if(brand.includes('iscar')) searchSite='iscar.com';
-  else if(brand.includes('seco')) searchSite='secotools.com';
-  else if(brand.includes('big')) searchSite='bigdaishowa.com';
-  else if(brand.includes('kyocera')||brand.includes('magic')) searchSite='kyocera-cutting.com';
-
-  let p = null;
-  try{
-    const searchQuery = searchSite 
-      ? `site:${searchSite} "${partData.partNumber}" specifications`
-      : `"${partData.partNumber}" cutting tool machining specifications brand category`;
-
-    const r2=await fetch('https://api.openai.com/v1/chat/completions',{
-      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-      body:JSON.stringify({model:'gpt-4o',max_tokens:800,messages:[{role:'user',content:[
-        {type:'text',text:`You are a machining tool expert. The part number is: ${partData.partNumber}
-Brand identified from label: ${partData.brand||'unknown'}
-${searchSite?'Search '+searchSite+' for this exact part number to get all specifications.':'Search the web for this part number to identify the tool and get specifications.'}
-
-Using your training data AND web knowledge about this part number, provide complete verified specifications.
-
-CRITICAL RULE FOR TAPS: Use the thread designation EXACTLY as it appears on the label. 
-DO NOT convert imperial to metric. 1/8 BSPT stays 1/8 BSPT. 1/16 NPT stays 1/16 NPT. #10-24 UNC stays #10-24 UNC. Never say "6mm" when label says "1/4 inch".
-The thread field from label is: ${partData.tapThread||'not a tap or not visible'}
-
-GÜHRING KNOWLEDGE:
-5511/5514 = solid carbide drill (solid_drill) — RT100U, nano-FIREX, coolant through
-5516/5525/5537/5562/5584/5735 = solid carbide end mill (end_mill)
-5584 label format: B=diameter, reach, OAL e.g. B 6,0-13,0 / 30,0-35,5 = Ø6mm reach 13mm OAL 35.5mm
-5725/5726 = HSS-E tap powertap spiral point (tap) — GOLDRING=gold oxide, BLUERING=steam treated
-973/5007 = HSS-E tap (tap)
-4108 = drill holder WECHSELPLATTENHALTER (drill_holder) — FUER xx,xxx-xx,xxx = insert diameter range
-4112/4115/4229 = drill insert tips (drill_insert)
-3574 = WINKELFRAESER angle cutter (other)
-GEWINDEBOHRER on label = tap, brand=Gühring
-GOLDRING/BLUERING/BRIGHTRING = tap ring colour (coating indicator), NOT a brand
-B-NR/C-NR prefix = ignore, not part of thread designation
-e.g. B-NR.10-24UNC-2B → thread size = #10-24 UNC 2B
-R-N/R-RF1/R-RT1 = sharp corner, R-B = ball nose
-
-ISCAR: ICP/ICM/HCP/IDI=drill_insert, SPGX/APKT/SEHT=milling_insert, CNMG/TNMG/DCMT=turning_insert
-SECO: SPGX/RPHT/RCMT=milling_insert, grades T400D/TP2500=SECO coating
-BIG Daishowa: CN/BN prefix → categoryConfidence=uncertain
-
-Return ONLY raw JSON:
-{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or solid_drill or drill_holder or other","categoryConfidence":"certain or uncertain","brand":"${partData.brand||''}","partNumber":"${partData.partNumber}","diameter":"","oal":"","reach":"","flutes":"","grade":"coating only e.g. nano-FIREX HSS-E TiAlN — never K/P numbers","cornerRadius":"e.g. R0.5 or sharp","tapRing":"${partData.tapRing||''}","tapThread":"thread size e.g. M10x1.5 or #10-24 UNC","description":"clear plain English e.g. Gühring HSS-E tap #10-24 UNC gold ring or Solid carbide end mill Ø6mm OAL 35.5mm","notes":"","qty":${partData.qty||1},"confidence":"high or medium or low"}`}
-      ]}]})
-    });
-    if(r2.ok){
-      const d2=await r2.json();
-      const raw2=d2.choices?.[0]?.message?.content||'';
-      const c2=raw2.replace(/\`\`\`json\s*/g,'').replace(/\`\`\`\s*/g,'').trim();
-      p=JSON.parse((c2.match(/\{[\s\S]*\}/)||[c2])[0]);
-    }
-  }catch(e){console.warn('Step 2 failed',e);}
-
-  // Fallback if step 2 failed
-  if(!p){
-    p={category:'other',brand:partData.brand||'',partNumber:partData.partNumber,
-       diameter:'',grade:'',description:'',notes:'',qty:partData.qty||1,confidence:'low'};
-  }
-
-  // Always use the exactly-read part number from step 1
-  p.partNumber = partData.partNumber;
-  p.brand = p.brand || partData.brand;
-  if(partData.tapRing && !p.tapRing) p.tapRing = partData.tapRing;
-  // Always use thread size exactly from label — never convert imperial to metric
-  if(partData.tapThread) p.tapThread = partData.tapThread;
-  if(partData.tapThread) p.diameter = partData.tapThread; // use label thread as diameter field
-
-  // Set category
-  const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',solid_drill:'solid_drill',drill_holder:'drill_holder',other:'other'};
-  currentCat=catMap[p.category]||'other';
-  renderCatTags();renderCatFields();
-
-  // Show category confirmation if uncertain
-  if(p.categoryConfidence==='uncertain'){
-    pendingAIResult=p;
-    document.getElementById('catConfirmDetails').innerHTML=
-      `<b>${p.brand||'Unknown'} ${p.partNumber||''}</b><br>${p.diameter||''} ${p.grade||''}<br><span style="color:var(--muted);font-size:11px">AI suggested: ${CAT_META[currentCat]?.label||currentCat}</span>`;
-    document.getElementById('thinking').classList.remove('show');
-    document.getElementById('analyseBtn').disabled=false;
-    document.getElementById('catConfirmModalBg').classList.add('show');
-    return;
-  }
-
-  document.getElementById('thinking').classList.remove('show');
-  document.getElementById('analyseBtn').disabled=false;
-  fillAIResult(p);
 }
 
-// ── ADJUST SCAN ────────────────────────────────────────────────────────────────
+function switchToAdjustFromResult(){
+  const pn=document.getElementById('fPart').value;
+  const br=getBrand('fBrand','newBrandInput');
+  const dm=(document.getElementById('fDiam')||{}).value||'';
+  const gr=document.getElementById('fGrade').value;
+  document.getElementById('resultCard').classList.remove('show');
+  findAndShowMatches({partNumber:pn,brand:br,diameter:dm,grade:gr});
+}
+
+// ── ADJUST SCAN ───────────────────────────────────────────────────────────────
 async function analyseForAdjust(){
   if(!currentImgB64)return;
   const apiKey=getApiKey();if(!apiKey){showToast('No API key',true);return;}
@@ -1239,12 +1101,7 @@ async function analyseForAdjust(){
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
       body:JSON.stringify({model:'gpt-4o',max_tokens:300,messages:[{role:'user',content:[
         {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
-        {type:'text',text:`Read this cutting tool label for stock lookup. Extract exact part number — every digit, dash, comma matters.
-GEWINDEBOHRER=tap, SL-RATIOFRAESER=end mill, WECHSELPLATTENHALTER=drill holder
-Gühring=yellow label, K/P is NOT the part number — put K/P in notes only
-Return ONLY raw JSON:
-{"brand":"","partNumber":"exact full part number","diameter":"","grade":"","notes":"K/P ref if present"}
-Copy part number exactly as printed.`}
+        {type:'text',text:`Read this cutting tool label. If brand not visible, identify from part number.\n\nISCAR codes: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, CNMG, TNMG, DCMT etc → brand=ISCAR\nSECO codes: SPGX, RPHT, RCMT, grades T400D/TP2500 → brand=SECO\nGühring: 4112, 4115, 4229 → brand=Gühring\n\nReturn ONLY raw JSON:\n{"brand":"","partNumber":"","diameter":"","grade":""}\nBe exact with the part number.`}
       ]}]})
     });
     clearInterval(ticker);
@@ -1270,17 +1127,17 @@ function findAndShowMatches(p){
   const dm=(p.diameter||'').replace(/[^\d.]/g,'');
   const scored=tools.map(t=>{
     let score=0;
-    // Keep dashes for part number matching — 5735-12,000 vs 5735-12,001 must NOT match
-    const tpn=(t.partNumber||'').toLowerCase().replace(/\s/g,'');
-    const spn=pn.replace(/\s/g,'');
+    const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
     const tbr=(t.brand||'').toLowerCase();
     const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
-    if(spn&&tpn&&tpn===spn)score+=100; // exact match only for part number
+    if(pn&&tpn&&tpn===pn)score+=100;
+    else if(pn&&tpn&&(tpn.includes(pn)||pn.includes(tpn)))score+=60;
     if(br&&tbr&&(tbr.includes(br)||br.includes(tbr)))score+=20;
-    if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.1)score+=15;
-    if(p.grade&&t.grade&&t.grade.toLowerCase()===p.grade.toLowerCase())score+=10;
+    if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.1)score+=30;
+    else if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.5)score+=10;
+    if(p.grade&&t.grade&&t.grade.toLowerCase()===p.grade.toLowerCase())score+=15;
     return{tool:t,score};
-  }).filter(x=>x.score>=100).sort((a,b)=>b.score-a.score).slice(0,5);
+  }).filter(x=>x.score>=20).sort((a,b)=>b.score-a.score).slice(0,5);
 
   adjSelectedId=null;
   document.getElementById('adjQtySection').style.display='none';
@@ -1293,7 +1150,7 @@ function findAndShowMatches(p){
   }else{
     hdr.textContent=scored[0].score>=100?'✓ Exact Match Found':`${scored.length} Match${scored.length>1?'es':''} Found`;
     el.innerHTML=scored.map(({tool:t})=>{
-      const sub=t.description||[t.diameter,t.oal?'OAL '+t.oal:'',t.tapRing?t.tapRing+' ring':'',t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+      const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
       const loc=locStr(t)||'No location set';
       return`<div class="adj-item" id="adj-${t.id}" onclick="selectAdjItem(${t.id})">
         <div class="adj-pn">${t.brand||''} ${t.partNumber}</div>
@@ -1372,14 +1229,9 @@ function submitTool(){
     id:Date.now(),cat:currentCat,brand,
     partNumber:pn,diameter:extra.fDiam||'',shape:extra.fShape||'',
     cornerRadius:extra.fCornerRadius||extra.fCorner||'',
-    description:document.getElementById('fDesc')?.value||'',
-    oal:document.getElementById('fOAL')?.value||'',
-    reach:document.getElementById('fReach')?.value||'',
-    tapRing:document.getElementById('fTapRing')?.value||'',
     grade:document.getElementById('fGrade').value,
     qty:parseInt(document.getElementById('fQty').value)||1,
     notes:document.getElementById('fNotes').value,
-    supplierId:parseInt(document.getElementById('fSupplier')?.value)||null,
     storageId:loc.storageId,bin:loc.bin,section:loc.section,
     extra,addedAt:new Date().toISOString(),
   };
@@ -1418,7 +1270,7 @@ function renderInventory(){
     const meta=CAT_META[c]||CAT_META.other;
     html+=`<div class="inv-group"><div class="inv-group-title">${meta.icon} ${meta.label}<span class="inv-group-count">${items.length}</span></div>`;
     items.sort((a,b)=>(a.brand||'').localeCompare(b.brand||'')).forEach(t=>{
-      const sub=t.description||[t.diameter,t.oal?'OAL '+t.oal:'',t.tapRing?t.tapRing+' ring':'',t.cornerRadius,t.grade].filter(Boolean).join(' · ');
+      const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
       const ls=locStr(t);
       html+=`<div class="inv-item" onclick="openDetail(${t.id})" style="cursor:pointer">
         <div class="cat-dot" style="background:${meta.color}"></div>
@@ -1459,74 +1311,31 @@ function renderStorageView(){
     }
     html+='</div>';
     el.innerHTML=html;
-  } else if(su.type==='shelves'){
-    // List view with custom slot labels
-    const labels=su.slotLabels||Array.from({length:su.count},(_,i)=>`Slot ${i+1}`);
+  }else{
+    // List view for shelves/drawers
     let html='<div style="display:flex;flex-direction:column;gap:6px">';
-    labels.forEach((label,i)=>{
-      const slotNum=i+1;
-      const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(slotNum)&&(!filterSection||t.section===filterSection));
+    for(let b=1;b<=su.count;b++){
+      const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(b));
       const qty=inSlot.reduce((s,t)=>s+t.qty,0);
-      const preview=inSlot.slice(0,2).map(t=>t.diameter||t.partNumber).join(', ');
-      html+=`<div class="storage-cell${qty?' has-stock':''}" onclick="openSlotModal('${suId}',${slotNum})">
-        <div class="sc-num${qty?' has-s':''}" style="min-width:0;flex-shrink:0;font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</div>
+      const preview=inSlot.slice(0,2).map(t=>`${t.brand||''} ${t.partNumber}`).join(', ');
+      html+=`<div class="storage-cell${qty?' has-stock':''}" onclick="openSlotModal('${suId}',${b})">
+        <div class="sc-num${qty?' has-s':''}">${tm.slotLabel} ${b}</div>
         <div class="sc-main">
           <div class="sc-preview">${qty?preview:'Empty'}</div>
           ${qty?`<div class="sc-qty">${qty} pcs · ${inSlot.length} item${inSlot.length!==1?'s':''}</div>`:''}
         </div>
       </div>`;
-    });
-    html+='</div>';
-    el.innerHTML=html;
-  } else if(su.type==='drawers'){
-    // Drawers — list of drawers, each showing its grid summary
-    let html='<div style="display:flex;flex-direction:column;gap:6px">';
-    for(let d=1;d<=su.count;d++){
-      const inDrawer=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(d));
-      const qty=inDrawer.reduce((s,t)=>s+t.qty,0);
-      const preview=inDrawer.slice(0,2).map(t=>t.diameter||t.partNumber).join(', ');
-      html+=`<div class="storage-cell${qty?' has-stock':''}" onclick="openDrawerModal('${suId}',${d})">
-        <div class="sc-num${qty?' has-s':''}" style="min-width:52px">Drawer ${d}</div>
-        <div class="sc-main">
-          <div class="sc-preview">${qty?preview:'Empty'}</div>
-          ${qty?`<div class="sc-qty">${qty} pcs · ${inDrawer.length} item${inDrawer.length!==1?'s':''} · ${su.rows||2}×${su.cols||4} grid</div>`:`<div style="font-size:10px;color:var(--muted)">${su.rows||2} rows × ${su.cols||4} cols</div>`}
-        </div>
-      </div>`;
     }
     html+='</div>';
     el.innerHTML=html;
   }
 }
 
-function openDrawerModal(suId,drawerNum){
-  const su=getSU(suId);if(!su)return;
-  const rows=su.rows||2,cols=su.cols||4;
-  const inDrawer=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(drawerNum));
-  document.getElementById('modalTitle').textContent=`${su.name} · Drawer ${drawerNum}`;
-  document.getElementById('modalSub').textContent=`${rows} rows × ${cols} cols${inDrawer.length?' · '+inDrawer.length+' items':' · Empty'}`;
-
-  // Build grid
-  let html='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:5px;margin-bottom:12px">';
-  for(let r=1;r<=rows;r++){
-    for(let c=1;c<=cols;c++){
-      const sec=`R${r}C${c}`;
-      const item=inDrawer.find(t=>t.section===sec);
-      html+=`<div style="background:${item?'rgba(59,130,246,.1)':'var(--card)'};border:1px solid ${item?'var(--accent2)':'var(--border)'};border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;min-height:52px;display:flex;flex-direction:column;justify-content:center;gap:2px" onclick="openSlotModal('${suId}',${drawerNum},'${sec}')">
-        <div style="font-size:8px;color:var(--muted);font-family:Syne,sans-serif;font-weight:700">R${r}·C${c}</div>
-        ${item?`<div style="font-size:9px;color:var(--text);line-height:1.2">${item.diameter||item.partNumber.slice(0,8)}</div><div style="font-size:9px;color:var(--green)">${item.qty}pcs</div>`:`<div style="font-size:8px;color:var(--border)">—</div>`}
-      </div>`;
-    }
-  }
-  html+='</div>';
-  document.getElementById('modalItems').innerHTML=html;
-  document.getElementById('modalBg').classList.add('show');
-}
-
-function openSlotModal(suId,slotNum,filterSection=null){
+function openSlotModal(suId,slotNum){
   const su=getSU(suId);if(!su)return;
   const tm=TYPE_META[su.type]||TYPE_META.bins;
   const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(slotNum));
-  const sectionLabel=filterSection?` · ${filterSection}`:'';document.getElementById('modalTitle').textContent=`${su.name} · ${su.type==='drawers'?'Drawer':'Slot'} ${slotNum}${sectionLabel}`;
+  document.getElementById('modalTitle').textContent=`${su.name} · ${tm.slotLabel} ${slotNum}`;
   document.getElementById('modalSub').textContent=inSlot.length?`${inSlot.length} item${inSlot.length>1?'s':''} · ${inSlot.reduce((s,t)=>s+t.qty,0)} pcs total`:'Empty';
 
   if(!inSlot.length){
@@ -1553,7 +1362,7 @@ function openSlotModal(suId,slotNum,filterSection=null){
 
 function toolCard(t){
   const meta=CAT_META[t.cat]||CAT_META.other;
-  const sub=t.description||[t.diameter,t.oal?'OAL '+t.oal:'',t.tapRing?t.tapRing+' ring':'',t.grade].filter(Boolean).join(' · ');
+  const sub=[t.diameter,t.shape,t.cornerRadius,t.grade].filter(Boolean).join(' · ');
   return`<div class="bin-tool-item" onclick="openDetail(${t.id})" style="cursor:pointer">
     <div class="bti-dot" style="background:${meta.color}"></div>
     <div class="bti-main">
@@ -1574,9 +1383,6 @@ function openEdit(id){
   document.getElementById('editToolId').value=id;
   populateBrandSelect('eBrand',t.brand);
   document.getElementById('ePart').value=t.partNumber||'';
-  const edEl=document.getElementById('eDesc');if(edEl)edEl.value=t.description||'';
-  const eoEl=document.getElementById('eOAL');if(eoEl)eoEl.value=t.oal||'';
-  const etEl=document.getElementById('eTapRing');if(etEl)etEl.value=t.tapRing||'';
   document.getElementById('eDiam').value=t.diameter||'';
   document.getElementById('eGrade').value=t.grade||'';
   document.getElementById('eQty').value=t.qty||1;
@@ -1607,9 +1413,6 @@ function saveEdit(){
   }
   tools[idx]={...tools[idx],brand,
     partNumber:document.getElementById('ePart').value.trim(),
-    description:document.getElementById('eDesc')?.value.trim()||'',
-    oal:document.getElementById('eOAL')?.value.trim()||'',
-    tapRing:document.getElementById('eTapRing')?.value.trim()||'',
     diameter:document.getElementById('eDiam').value.trim(),
     grade:document.getElementById('eGrade').value.trim(),
     qty:parseInt(document.getElementById('eQty').value)||0,
@@ -1631,36 +1434,15 @@ function deleteToolFromEdit(){
 
 function closeEditModal(e){if(!e||e.target===document.getElementById('editModalBg'))document.getElementById('editModalBg').classList.remove('show');}
 
-// ── CONTACTS MODAL ───────────────────────────────────────────────────────────
-function openContactsModal(){
-  // Populate fields from localStorage
-  const pn=localStorage.getItem('ts_proc_name')||'';
-  const pe=localStorage.getItem('ts_proc_email')||'';
-  const pc=localStorage.getItem('ts_proc_cc')||'';
-  const pnEl=document.getElementById('procName');
-  const peEl=document.getElementById('procEmail');
-  const pcEl=document.getElementById('procCC');
-  if(pnEl)pnEl.value=pn;
-  if(peEl)peEl.value=pe;
-  if(pcEl)pcEl.value=pc;
-  renderSupplierList();
-  document.getElementById('contactsModalBg').classList.add('show');
-}
-
-function closeContactsModal(e){
-  if(!e||e.target===document.getElementById('contactsModalBg'))
-    document.getElementById('contactsModalBg').classList.remove('show');
-}
-
 // ── TABS ──────────────────────────────────────────────────────────────────────
 function switchTab(tab){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['scan','inventory','storage','settings'][i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   if(tab==='inventory')renderInventory();
-  if(tab==='storage'){populateStorageSelect();renderStorageView();}
+  if(tab==='storage'){populateStorageSelect();renderStorageView();renderStorageUnitListInline();}
   if(tab==='contacts'){renderSupplierList();loadProcSettings();}
-  if(tab==='settings'){renderBrandList();renderStorageUnitList();}
+  if(tab==='settings'){renderBrandList();}
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
@@ -1754,12 +1536,6 @@ function fillAIResult(p){
     if(!found&&p.brand){const opt=document.createElement('option');opt.value=p.brand;opt.text=p.brand;opt.selected=true;brandSel.insertBefore(opt,brandSel.firstChild);brandSel.value=p.brand;}
   }
   document.getElementById('fPart').value=p.partNumber||'';
-  const fdEl=document.getElementById('fDesc');if(fdEl)fdEl.value=p.description||'';
-  const foEl=document.getElementById('fOAL');if(foEl)foEl.value=p.oal||'';
-  const frEl=document.getElementById('fReach');if(frEl)frEl.value=[p.reach,p.flutes?p.flutes+'fl':''].filter(Boolean).join(' / ');
-  const ftEl=document.getElementById('fTapRing');if(ftEl)ftEl.value=p.tapRing||'';
-  // For taps — use exact thread from label as diameter field
-  if(p.tapThread){const dEl2=document.getElementById('fDiam');if(dEl2&&!dEl2.value)dEl2.value=p.tapThread;}
   document.getElementById('fGrade').value=p.grade||'';
   document.getElementById('fQty').value=p.qty||1;
   document.getElementById('fNotes').value=p.notes||'';
@@ -1786,56 +1562,23 @@ function fillAIResult(p){
   // Trigger background verify to cross-check specs
   verifySingleAfterScan(p.brand||'', p.partNumber||'', p.notes||'');
   // Check if already in stock
-  // Normalize part number — strip spaces, dashes, commas for comparison
-  const normPn = s => (s||'').toLowerCase().replace(/[\s\-,\.]/g,'');
-  const pnCheck = normPn(p.partNumber);
-  const brCheck = (p.brand||'').toLowerCase();
-
-  // Score each tool in stock
-  const scored = tools.map(t=>{
-    const tpn = normPn(t.partNumber);
-    const tbr = (t.brand||'').toLowerCase();
-    if(!pnCheck||!tpn) return{tool:t,score:0,exact:false};
-    
-    let score=0;
-    let exact=false;
-    
-    // Exact normalized match
-    if(tpn===pnCheck){score=100;exact=true;}
-    // One contains the other
-    else if(tpn.includes(pnCheck)||pnCheck.includes(tpn)){score=80;}
-    // First 4 digits match (same series)
-    else if(pnCheck.length>=4&&tpn.slice(0,4)===pnCheck.slice(0,4)){score=40;}
-    
-    // Brand match bonus
-    if(brCheck&&(tbr.includes(brCheck)||brCheck.includes(tbr))) score+=15;
-    
-    // Category match bonus
-    if(t.cat===currentCat) score+=10;
-    
-    return{tool:t,score,exact};
-  }).filter(x=>x.score>=50).sort((a,b)=>b.score-a.score);
-
-  const inStockMatch = scored.length>0 ? scored[0].tool : null;
-  const exactMatch = scored.find(x=>x.exact)?.tool || null;
+  const pnCheck=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+  const brCheck=(p.brand||'').toLowerCase();
+  const dmCheck=(p.diameter||'').replace(/[^\d.]/g,'');
+  const inStockMatch=tools.find(t=>{
+    const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+    const tbr=(t.brand||'').toLowerCase();
+    const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
+    return pnCheck&&tpn&&tpn===pnCheck&&(!brCheck||tbr.includes(brCheck)||brCheck.includes(tbr))&&(!dmCheck||!tdm||Math.abs(parseFloat(dmCheck)-parseFloat(tdm))<0.2);
+  });
   if(inStockMatch){
     inStockMatchedTool=inStockMatch;
     const ls=locStr(inStockMatch)||'No location set';
-    const isExact=!!exactMatch;
-    const titleEl=document.getElementById('inStockModalTitle');
-    const subtitleEl=document.getElementById('inStockModalSubtitle');
-    if(titleEl) titleEl.textContent=isExact?'⚠️ Already in Stock':'🔍 Possible Match in Stock';
-    if(subtitleEl) subtitleEl.textContent=isExact?'This item is already in stock.':'This looks similar to an existing item — is it the same?';
     document.getElementById('inStockDetails').innerHTML=
       `<b>${inStockMatch.brand||''} ${inStockMatch.partNumber}</b><br>`+
-      `${inStockMatch.description||[inStockMatch.diameter,inStockMatch.grade].filter(Boolean).join(' · ')}<br>`+
+      `${[inStockMatch.diameter,inStockMatch.shape,inStockMatch.cornerRadius,inStockMatch.grade].filter(Boolean).join(' · ')}<br>`+
       `<span style="color:var(--accent2)">📦 ${ls}</span><br>`+
       `<span style="color:var(--green)">In stock: ${inStockMatch.qty} pcs</span>`;
-    // Show different buttons based on exact vs fuzzy
-    const adjBtn=document.getElementById('inStockAdjBtn');
-    const noBtn=document.getElementById('inStockNoBtn');
-    if(adjBtn) adjBtn.textContent=isExact?'↕ Adjust Stock':'✓ Yes, same item — Adjust';
-    if(noBtn) noBtn.style.display=isExact?'none':'block';
     document.getElementById('inStockModalBg').classList.add('show');
   }
 }
@@ -1881,7 +1624,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-// APP_VERSION defined at top of script
+const APP_VERSION = '2.8';
 
 async function checkForUpdate() {
   const btn = document.getElementById('updateBtn');
@@ -2216,7 +1959,7 @@ async function applyVerifyResult(t, apiData, changeLog, log) {
   }
 
   if (p.cornerRadius) p.cornerRadius = fixCornerRadius(t.brand, t.partNumber, p.cornerRadius);
-  const catMap = { drill_insert:'drill', milling_insert:'milling', turning_insert:'turning', tap:'taps', end_mill:'endmill', solid_drill:'solid_drill', drill_holder:'drill_holder', other:'other' };
+  const catMap = { drill: 'drill', milling: 'milling', turning: 'turning', taps: 'taps', endmill: 'endmill', other: 'other' };
   const idx = tools.findIndex(x => x.id === t.id);
   if (idx < 0) return false;
 
@@ -2403,7 +2146,7 @@ function deleteSupplier(id) {
 }
 
 function populateSupplierSelects() {
-  ['fSupplier', 'eSupplier', 'reorderSupplierSel'].forEach(selId => {
+  ['eSupplier', 'reorderSupplierSel'].forEach(selId => {
     const sel = document.getElementById(selId);
     if (!sel) return;
     const cur = sel.value;
@@ -2553,58 +2296,26 @@ function copyReorder() {
 // Init
 updateCount();
 populateStorageSelect();
-
-// Version display
+// Version display + intro
 (function(){
-  const vEl = document.getElementById('appVersionDisplay');
-  const dEl = document.getElementById('appVersionDate');
-  if(vEl) vEl.textContent = APP_VERSION;
+  var vEl=document.getElementById('appVersionDisplay');
+  var dEl=document.getElementById('appVersionDate');
+  if(vEl) vEl.textContent=APP_VERSION;
   if(dEl){
-    // Store build date in localStorage on first run of each version
-    const key = 'ts_version_date_' + APP_VERSION;
-    if(!localStorage.getItem(key)){
-      localStorage.setItem(key, new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}));
-    }
-    dEl.textContent = localStorage.getItem(key) || '—';
+    var key='ts_vdate_'+APP_VERSION;
+    if(!localStorage.getItem(key)) localStorage.setItem(key,new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}));
+    dEl.textContent=localStorage.getItem(key)||'';
   }
+  try{
+    var intro=document.getElementById('introScreen');
+    var ic=document.getElementById('introContent');
+    var id=document.getElementById('introDivider');
+    if(!intro||!ic) return;
+    var fail=setTimeout(function(){if(intro)intro.style.display='none';},6000);
+    setTimeout(function(){try{ic.style.opacity='1';ic.style.transform='translateY(0)';if(id)id.style.width='110px';}catch(e){}},120);
+    setTimeout(function(){try{clearTimeout(fail);intro.style.transition='opacity .5s ease';intro.style.opacity='0';setTimeout(function(){intro.style.display='none';},500);}catch(e){if(intro)intro.style.display='none';}},4000);
+  }catch(e){var s=document.getElementById('introScreen');if(s)s.style.display='none';}
 })();
-
-// Intro screen — wrapped in try/catch so any error just hides it immediately
-try {
-  const introScreen = document.getElementById('introScreen');
-  const introContent = document.getElementById('introContent');
-  const introDivider = document.getElementById('introDivider');
-  if(introScreen && introContent){
-    // Failsafe — always remove intro after 6s no matter what
-    const failsafe = setTimeout(()=>{
-      if(introScreen) introScreen.style.display='none';
-    }, 6000);
-    // Animate in
-    setTimeout(()=>{
-      try{
-        introContent.style.opacity='1';
-        introContent.style.transform='translateY(0)';
-        if(introDivider) introDivider.style.width='110px';
-      }catch(e){}
-    }, 120);
-    // Fade out after 4s
-    setTimeout(()=>{
-      try{
-        clearTimeout(failsafe);
-        introScreen.style.transition='opacity .5s ease';
-        introScreen.style.opacity='0';
-        setTimeout(()=>{ introScreen.style.display='none'; }, 500);
-      }catch(e){
-        if(introScreen) introScreen.style.display='none';
-      }
-    }, 4000);
-  }
-} catch(e) {
-  const s = document.getElementById('introScreen');
-  if(s) s.style.display='none';
-}
-
-
 </script>
 </body>
 </html>
