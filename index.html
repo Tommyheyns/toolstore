@@ -727,7 +727,7 @@ const CAT_META={
   other:       {icon:'⚪',label:'Other',            color:'#6b7899'},
 };
 const CAT_KEYS=Object.keys(CAT_META);
-const APP_VERSION='2.6';
+const APP_VERSION='2.7';
 const DEFAULT_BRANDS=['Gühring','ISCAR','SECO','Sandvik Coromant','Kennametal','Walter','Mitsubishi','Sumitomo','Kyocera'];
 const TYPE_META={
   bins:   {icon:'🗄️',label:'Bins',    slotLabel:'Bin',     hasSection:true},
@@ -1786,37 +1786,38 @@ function fillAIResult(p){
   // Trigger background verify to cross-check specs
   verifySingleAfterScan(p.brand||'', p.partNumber||'', p.notes||'');
   // Check if already in stock
-  const pnCheck=(p.partNumber||'').toLowerCase().replace(/\s/g,'');
-  const brCheck=(p.brand||'').toLowerCase();
-  
-  // First try exact match
-  let inStockMatch=tools.find(t=>{
-    const tpn=(t.partNumber||'').toLowerCase().replace(/\s/g,'');
-    if(!pnCheck||!tpn||tpn!==pnCheck) return false;
-    const tbr=(t.brand||'').toLowerCase();
-    return !brCheck||tbr.includes(brCheck)||brCheck.includes(tbr);
-  });
+  // Normalize part number — strip spaces, dashes, commas for comparison
+  const normPn = s => (s||'').toLowerCase().replace(/[\s\-,\.]/g,'');
+  const pnCheck = normPn(p.partNumber);
+  const brCheck = (p.brand||'').toLowerCase();
 
-  // If no exact match, try fuzzy — same part number base (ignoring minor differences)
-  if(!inStockMatch && pnCheck){
-    inStockMatch=tools.find(t=>{
-      const tpn=(t.partNumber||'').toLowerCase().replace(/[\s,]/g,'');
-      const spn=pnCheck.replace(/[\s,]/g,'');
-      // Match if 90%+ of characters are the same
-      if(!tpn||!spn) return false;
-      const longer=Math.max(tpn.length,spn.length);
-      const shorter=Math.min(tpn.length,spn.length);
-      if(shorter/longer < 0.85) return false;
-      // Check if one contains the other or they share the same base
-      return tpn.includes(spn)||spn.includes(tpn)||tpn.slice(0,6)===spn.slice(0,6);
-    });
-  }
+  // Score each tool in stock
+  const scored = tools.map(t=>{
+    const tpn = normPn(t.partNumber);
+    const tbr = (t.brand||'').toLowerCase();
+    if(!pnCheck||!tpn) return{tool:t,score:0,exact:false};
+    
+    let score=0;
+    let exact=false;
+    
+    // Exact normalized match
+    if(tpn===pnCheck){score=100;exact=true;}
+    // One contains the other
+    else if(tpn.includes(pnCheck)||pnCheck.includes(tpn)){score=80;}
+    // First 4 digits match (same series)
+    else if(pnCheck.length>=4&&tpn.slice(0,4)===pnCheck.slice(0,4)){score=40;}
+    
+    // Brand match bonus
+    if(brCheck&&(tbr.includes(brCheck)||brCheck.includes(tbr))) score+=15;
+    
+    // Category match bonus
+    if(t.cat===currentCat) score+=10;
+    
+    return{tool:t,score,exact};
+  }).filter(x=>x.score>=50).sort((a,b)=>b.score-a.score);
 
-  // If fuzzy match found but details differ — show "might be same" popup
-  const exactMatch = tools.find(t=>{
-    const tpn=(t.partNumber||'').toLowerCase().replace(/\s/g,'');
-    return pnCheck&&tpn&&tpn===pnCheck;
-  });
+  const inStockMatch = scored.length>0 ? scored[0].tool : null;
+  const exactMatch = scored.find(x=>x.exact)?.tool || null;
   if(inStockMatch){
     inStockMatchedTool=inStockMatch;
     const ls=locStr(inStockMatch)||'No location set';
