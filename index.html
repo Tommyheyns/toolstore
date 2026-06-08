@@ -421,6 +421,16 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     </div>
   </div>
   <div class="settings-section">
+    <div class="settings-title">Import from Spreadsheet</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Paste CSV exported from your spreadsheet. Matches items by part number and updates brand, category, diameter, grade and description. Your stock quantities and storage locations are never changed.</div>
+    <button class="settings-btn" onclick="showImportBox()"><span class="settings-icon">📥</span> Import from CSV</button>
+    <div id="importBox" style="display:none;margin-top:8px">
+      <textarea id="importInput" placeholder="Paste CSV content here…" style="width:100%;height:140px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;resize:none;outline:none;margin-bottom:8px;box-sizing:border-box"></textarea>
+      <button onclick="previewImport()" style="width:100%;padding:13px;border-radius:var(--radius);background:var(--accent2);color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer;margin-bottom:6px">🔍 Preview Changes</button>
+      <button onclick="document.getElementById('importBox').style.display='none'" style="width:100%;padding:11px;border-radius:var(--radius);background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:13px;border:1px solid var(--border);cursor:pointer">Cancel</button>
+    </div>
+  </div>
+  <div class="settings-section">
     <div class="settings-title">AI Stock Verification</div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Cross-reference every item in your inventory against manufacturer data. AI searches the web for each part and auto-updates descriptions, sizes, and specs.</div>
     <button class="settings-btn" id="verifyBtn" onclick="openVerifyModal()"><span class="settings-icon">🔍</span> AI Verify All Stock</button>
@@ -1624,7 +1634,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '2.8';
+const APP_VERSION = '2.9';
 
 async function checkForUpdate() {
   const btn = document.getElementById('updateBtn');
@@ -1927,7 +1937,7 @@ async function startVerify() {
 
   // Save all changes
   save('ts_tools', tools);
-  updateCount();
+  if(typeof updateCount==='function') updateCount();
   renderInventory();
 
   // Show done screen
@@ -2315,7 +2325,222 @@ populateStorageSelect();
     setTimeout(function(){try{ic.style.opacity='1';ic.style.transform='translateY(0)';if(id)id.style.width='110px';}catch(e){}},120);
     setTimeout(function(){try{clearTimeout(fail);intro.style.transition='opacity .5s ease';intro.style.opacity='0';setTimeout(function(){intro.style.display='none';},500);}catch(e){if(intro)intro.style.display='none';}},4000);
   }catch(e){var s=document.getElementById('introScreen');if(s)s.style.display='none';}
+
+// ── SPREADSHEET IMPORT ────────────────────────────────────────────────────────
+let importPreviewData = [];
+
+function showImportBox(){
+  const box = document.getElementById('importBox');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function closeImportModal(e){
+  if(!e || e.target === document.getElementById('importModalBg'))
+    document.getElementById('importModalBg').classList.remove('show');
+}
+
+function parseCSV(text){
+  const lines = text.trim().split('\n');
+  if(lines.length < 2) return [];
+  // Handle quoted fields
+  function parseLine(line){
+    const fields = [];
+    let cur = '', inQ = false;
+    for(let i=0; i<line.length; i++){
+      const c = line[i];
+      if(c==='"'){ inQ=!inQ; }
+      else if(c===',' && !inQ){ fields.push(cur.trim()); cur=''; }
+      else { cur+=c; }
+    }
+    fields.push(cur.trim());
+    return fields;
+  }
+  const headers = parseLine(lines[0]).map(h=>h.replace(/^"|"$/g,'').trim());
+  const rows = [];
+  for(let i=1; i<lines.length; i++){
+    if(!lines[i].trim()) continue;
+    const vals = parseLine(lines[i]);
+    const obj = {};
+    headers.forEach((h,idx)=>{ obj[h] = (vals[idx]||'').replace(/^"|"$/g,'').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+// Map spreadsheet columns to app fields
+function mapRow(row){
+  // Find part number - try different header names
+  const pn = (row['Part Number']||row['PartNumber']||row['part_number']||'').trim();
+  const brand = (row['Brand']||'').trim();
+  const cat = (row['Category']||'').trim();
+  const diam = (row['Diameter']||'').trim();
+  const grade = (row['Grade']||'').trim();
+  const shape = (row['Shape']||'').trim();
+  const notes = (row['Notes']||'').trim();
+  const coolant = (row['Coolant Through']||row['coolant_through']||'').trim();
+  const desc = (row['Description']||row['description']||'').trim();
+  
+  // Map category names from spreadsheet to app cat keys
+  const catMap = {
+    'Drill Inserts': 'drill', 'Drill Holders': 'drill_holder',
+    'Solid Drills': 'solid_drill', 'End Mills': 'endmill',
+    'Milling Inserts': 'milling', 'Taps': 'taps', 'Other': 'other'
+  };
+  
+  return { pn, brand, cat: catMap[cat]||'other', catLabel: cat, diam, grade, shape, notes, coolant, desc };
+}
+
+function normPn(s){ return (s||'').toLowerCase().replace(/[\s]/g,''); }
+
+function previewImport(){
+  const csv = document.getElementById('importInput').value.trim();
+  if(!csv){ showToast('Paste CSV content first', true); return; }
+  
+  const rows = parseCSV(csv);
+  if(!rows.length){ showToast('Could not parse CSV', true); return; }
+  
+  importPreviewData = [];
+  let updated=0, added=0, unchanged=0, skipped=0;
+
+  for(const row of rows){
+    const mapped = mapRow(row);
+    if(!mapped.pn){ skipped++; continue; }
+    
+    // Find existing tool by part number
+    const existing = tools.find(t => normPn(t.partNumber) === normPn(mapped.pn));
+    
+    if(existing){
+      // Work out what would change (never touch qty or storage)
+      const changes = {};
+      if(mapped.brand && mapped.brand !== existing.brand) changes.brand = {from: existing.brand, to: mapped.brand};
+      if(mapped.cat && mapped.cat !== existing.cat) changes.cat = {from: existing.cat, to: mapped.cat};
+      if(mapped.diam && mapped.diam !== existing.diameter) changes.diameter = {from: existing.diameter||'—', to: mapped.diam};
+      if(mapped.grade && mapped.grade !== existing.grade) changes.grade = {from: existing.grade||'—', to: mapped.grade};
+      if(mapped.desc && mapped.desc !== existing.description) changes.description = {from: existing.description||'—', to: mapped.desc};
+      if(mapped.coolant && mapped.coolant !== (existing.coolantThrough||'')) changes.coolantThrough = {from: existing.coolantThrough||'—', to: mapped.coolant};
+      
+      if(Object.keys(changes).length > 0){
+        importPreviewData.push({type:'update', existing, mapped, changes});
+        updated++;
+      } else {
+        unchanged++;
+      }
+    } else {
+      // New item — would be added (with qty from CSV if available, else 1)
+      const qty = parseInt(row['Qty']||row['qty']||'1')||1;
+      importPreviewData.push({type:'add', mapped, qty});
+      added++;
+    }
+  }
+  
+  // Build preview UI
+  const summaryBar = document.getElementById('importSummaryBar');
+  summaryBar.innerHTML = 
+    '<span style="color:var(--accent2);font-weight:700">' + updated + ' updates</span> · ' +
+    '<span style="color:var(--green);font-weight:700">' + added + ' new items</span> · ' +
+    '<span style="color:var(--muted)">' + unchanged + ' unchanged</span>' +
+    (skipped ? ' · <span style="color:var(--warn)">' + skipped + ' skipped (no part number)</span>' : '');
+  
+  const list = document.getElementById('importPreviewList');
+  list.innerHTML = '';
+  
+  if(!importPreviewData.length){
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Nothing to update — all items already match.</div>';
+    document.getElementById('importApplyBtn').style.display = 'none';
+  } else {
+    document.getElementById('importApplyBtn').style.display = 'block';
+    for(const item of importPreviewData){
+      const div = document.createElement('div');
+      div.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px';
+      
+      if(item.type === 'update'){
+        const changeLines = Object.entries(item.changes).map(([field,ch])=>
+          '<div style="font-size:11px;color:var(--muted);margin-top:3px">' +
+          '<span style="text-transform:capitalize">' + field + '</span>: ' +
+          '<span style="color:var(--warn);text-decoration:line-through">' + ch.from + '</span> → ' +
+          '<span style="color:var(--green)">' + ch.to + '</span></div>'
+        ).join('');
+        div.innerHTML = 
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+          '<span style="background:rgba(59,130,246,.15);color:var(--accent2);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase">Update</span>' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600">' + item.mapped.pn + '</span>' +
+          '<span style="font-size:11px;color:var(--muted)">' + (item.existing.brand||'') + '</span></div>' +
+          changeLines;
+      } else {
+        div.innerHTML = 
+          '<div style="display:flex;align-items:center;gap:8px">' +
+          '<span style="background:rgba(34,197,94,.15);color:var(--green);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase">New</span>' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600">' + item.mapped.pn + '</span>' +
+          '<span style="font-size:11px;color:var(--muted)">' + item.mapped.brand + ' · ' + item.mapped.catLabel + '</span>' +
+          '<span style="margin-left:auto;font-size:11px;color:var(--accent)">qty ' + item.qty + '</span></div>';
+      }
+      list.appendChild(div);
+    }
+  }
+  
+  document.getElementById('importModalBg').classList.add('show');
+}
+
+function applyImport(){
+  let updCount=0, addCount=0;
+  
+  for(const item of importPreviewData){
+    if(item.type === 'update'){
+      const idx = tools.findIndex(t => t.id === item.existing.id);
+      if(idx >= 0){
+        const ch = item.changes;
+        if(ch.brand) tools[idx].brand = ch.brand.to;
+        if(ch.cat) tools[idx].cat = ch.cat.to;
+        if(ch.diameter) tools[idx].diameter = ch.diameter.to;
+        if(ch.grade) tools[idx].grade = ch.grade.to;
+        if(ch.description) tools[idx].description = ch.description.to;
+        if(ch.coolantThrough) tools[idx].coolantThrough = ch.coolantThrough.to;
+        updCount++;
+      }
+    } else if(item.type === 'add'){
+      const newTool = {
+        id: Date.now() + Math.random(),
+        cat: item.mapped.cat,
+        brand: item.mapped.brand,
+        partNumber: item.mapped.pn,
+        diameter: item.mapped.diam,
+        grade: item.mapped.grade,
+        shape: item.mapped.shape,
+        description: item.mapped.desc,
+        coolantThrough: item.mapped.coolant,
+        notes: item.mapped.notes,
+        qty: item.qty,
+        storageId: '', bin: '', section: '',
+        addedAt: new Date().toISOString()
+      };
+      tools.push(newTool);
+      addCount++;
+    }
+  }
+  
+  save('ts_tools', tools);
+  if(typeof updateCount==='function') updateCount();
+  closeImportModal();
+  document.getElementById('importBox').style.display = 'none';
+  document.getElementById('importInput').value = '';
+  importPreviewData = [];
+  showToast(updCount + ' updated, ' + addCount + ' added — check Stock tab');
+  renderInventory();
+}
+
 })();
 </script>
+<!-- Import Preview Modal -->
+<div class="modal-bg" id="importModalBg" onclick="closeImportModal(event)">
+  <div class="modal" style="max-height:85vh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px">📥 Import Preview</div>
+    <div id="importSummaryBar" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.8"></div>
+    <div id="importPreviewList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:45vh;overflow-y:auto"></div>
+    <button id="importApplyBtn" onclick="applyImport()" style="width:100%;padding:14px;border-radius:var(--radius);background:var(--green);color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;border:none;cursor:pointer;margin-bottom:8px">✓ Apply All Changes</button>
+    <button onclick="closeImportModal()" style="width:100%;padding:12px;border-radius:var(--radius);background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:13px;border:1px solid var(--border);cursor:pointer">Cancel</button>
+  </div>
+</div>
+
 </body>
 </html>
