@@ -238,7 +238,6 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <button class="tab active" onclick="switchTab('scan')">📷<br>Scan</button>
   <button class="tab" onclick="switchTab('inventory')">📋<br>Stock</button>
   <button class="tab" onclick="switchTab('storage')">🗄️<br>Storage</button>
-  <button class="tab" onclick="switchTab('contacts')">👥<br>Contacts</button>
   <button class="tab" onclick="switchTab('settings')">⚙️<br>Settings</button>
 </div>
 
@@ -364,34 +363,12 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <div id="storageView"></div>
 </div>
 
-<!-- ══ CONTACTS ══ -->
-<div class="page" id="page-contacts">
-  <div class="settings-section">
-    <div class="settings-title">Internal — Procurement</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6">Reorder requests are emailed to your procurement manager. CC is optional.</div>
-    <div style="margin-bottom:10px">
-      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Manager Name</div>
-      <input type="text" id="procName" placeholder="e.g. John Smith" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
-    </div>
-    <div style="margin-bottom:10px">
-      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Email — To</div>
-      <input type="email" id="procEmail" placeholder="procurement@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
-    </div>
-    <div>
-      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Email — CC (optional)</div>
-      <input type="email" id="procCC" placeholder="manager@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
-    </div>
-  </div>
-  <div class="settings-section">
-    <div class="settings-title">Suppliers</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">Supplier details appear on reorder requests so your procurement manager knows who to contact.</div>
-    <div id="supplierList"></div>
-    <button class="settings-btn" onclick="openSupplierModal()"><span class="settings-icon">➕</span> Add Supplier</button>
-  </div>
-</div>
-
 <!-- ══ SETTINGS ══ -->
 <div class="page" id="page-settings">
+  <div class="settings-section">
+    <div class="settings-title">Contact Details</div>
+    <button class="settings-btn" onclick="openContactsModal()"><span class="settings-icon">👥</span> Procurement &amp; Suppliers</button>
+  </div>
   <div class="settings-section">
     <div class="settings-title">App Version</div>
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
@@ -461,11 +438,11 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 
 <!-- Add storage modal -->
 <div class="modal-bg" id="addStorageModalBg" onclick="closeAddStorageModal(event)">
-  <div class="modal">
+  <div class="modal" style="max-height:92vh;overflow-y:auto">
     <div class="modal-handle"></div>
     <div class="modal-title" id="addStorageTitle">Add Storage Unit</div>
     <input type="hidden" id="editStorageId">
-    <div class="edit-field"><label>Name</label><input type="text" id="suName" placeholder="e.g. Parts Cabinet, Wall Rack, Tool Chest"></div>
+    <div class="edit-field"><label>Name</label><input type="text" id="suName" placeholder="e.g. Tool Cabinet, Wall Rack"></div>
     <div style="margin-bottom:12px">
       <div style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Type</div>
       <div class="type-grid">
@@ -474,11 +451,42 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
         <div class="type-btn" id="type-drawers" onclick="selectStorageType('drawers')"><span class="type-btn-icon">🗃️</span><div class="type-btn-name">Drawers</div></div>
       </div>
     </div>
-    <div class="edit-field"><label id="suCountLabel">Number of Bins</label><input type="number" id="suCount" value="48" min="1" max="200"></div>
-    <div id="suSectionRow" class="edit-field">
-      <label>Sections per Bin</label>
-      <select id="suSections"><option value="1">None (no sections)</option><option value="2" selected>A + B</option><option value="3">A + B + C</option></select>
+
+    <!-- Bins -->
+    <div id="suBinsOptions">
+      <div class="edit-field"><label>Number of Bins</label><input type="number" id="suCount" value="48" min="1" max="200"></div>
+      <div class="edit-field" id="suSectionRow">
+        <label>Sections per Bin</label>
+        <select id="suSections"><option value="1">None</option><option value="2" selected>A + B</option><option value="3">A + B + C</option></select>
+      </div>
     </div>
+
+    <!-- Shelves -->
+    <div id="suShelvesOptions" style="display:none">
+      <div class="edit-field">
+        <label>Number of Slots</label>
+        <input type="number" id="suShelfCount" value="6" min="1" max="50" oninput="generateShelfLabels()">
+      </div>
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px">Slot Labels <span style="text-transform:none;font-size:10px;letter-spacing:0"> — name each slot (e.g. Top Shelf, Big Tub)</span></div>
+      <div id="suShelfLabels" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+    </div>
+
+    <!-- Drawers -->
+    <div id="suDrawersOptions" style="display:none">
+      <div class="edit-field"><label>Number of Drawers</label><input type="number" id="suDrawerCount" value="5" min="1" max="30" oninput="previewDrawerGrid()"></div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div style="flex:1">
+          <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Rows / Drawer</div>
+          <input type="number" id="suDrawerRows" value="2" min="1" max="10" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none" oninput="previewDrawerGrid()">
+        </div>
+        <div style="flex:1">
+          <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Cols / Drawer</div>
+          <input type="number" id="suDrawerCols" value="3" min="1" max="10" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none" oninput="previewDrawerGrid()">
+        </div>
+      </div>
+      <div id="drawerGridPreview" style="font-size:11px;color:var(--muted);margin-bottom:10px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;line-height:1.7"></div>
+    </div>
+
     <div class="edit-field"><label>Description (optional)</label><input type="text" id="suDesc" placeholder="e.g. 48-bin PTB cabinet, drill inserts"></div>
     <button class="edit-save" onclick="saveStorageUnit()">✓ Save</button>
     <button class="modal-close" onclick="closeAddStorageModal()" style="margin-top:8px">Cancel</button>
@@ -591,6 +599,35 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     </div>
   </div>
 </div>
+<!-- Contacts Modal -->
+<div class="modal-bg" id="contactsModalBg" onclick="closeContactsModal(event)">
+  <div class="modal" style="max-height:92vh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👥 Contact Details</div>
+    <div class="modal-sub">Procurement manager &amp; suppliers</div>
+    <div style="font-size:10px;color:var(--accent);letter-spacing:.09em;text-transform:uppercase;margin:12px 0 8px">Internal — Procurement</div>
+    <div style="margin-bottom:9px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px">Manager Name</div>
+      <input type="text" id="procName" placeholder="e.g. John Smith" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
+    </div>
+    <div style="margin-bottom:9px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px">Email — To</div>
+      <input type="email" id="procEmail" placeholder="procurement@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px">Email — CC (optional)</div>
+      <input type="email" id="procCC" placeholder="manager@company.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;box-sizing:border-box" oninput="saveProcSettings()">
+    </div>
+    <div style="height:1px;background:var(--border);margin-bottom:14px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:10px;color:var(--accent);letter-spacing:.09em;text-transform:uppercase">Suppliers</div>
+      <button onclick="openSupplierModal()" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 11px;font-size:11px;color:var(--text);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700">➕ Add</button>
+    </div>
+    <div id="supplierList"></div>
+    <button onclick="closeContactsModal()" class="modal-close" style="margin-top:12px">Done</button>
+  </div>
+</div>
+
 <!-- Supplier Modal -->
 <div class="modal-bg" id="supplierModalBg" onclick="closeSupplierModal(event)">
   <div class="modal">
@@ -731,12 +768,21 @@ tools=tools.map(t=>{
 function getSU(id){return storageUnits.find(s=>s.id===id);}
 function locStr(t){
   if(!t.storageId)return '';
-  const su=getSU(t.storageId);
-  if(!su)return '';
-  const tm=TYPE_META[su.type]||TYPE_META.bins;
-  const slot=t.bin?`${tm.slotLabel} ${t.bin}`:'';
-  const sec=su.type==='bins'&&t.section?` · ${t.section}`:'';
-  return `${su.name}${slot?' · '+slot:''}${sec}`;
+  const su=getSU(t.storageId);if(!su)return '';
+  if(su.type==='bins'){
+    const slot=t.bin?`Bin ${t.bin}`:'';
+    const sec=t.section?` · ${t.section}`:'';
+    return `${su.name}${slot?' · '+slot:''}${sec}`;
+  }else if(su.type==='shelves'){
+    if(!t.bin)return su.name;
+    const lbl=(su.slotLabels||[])[parseInt(t.bin)-1];
+    return `${su.name} · ${lbl||'Slot '+t.bin}`;
+  }else if(su.type==='drawers'){
+    if(!t.bin)return su.name;
+    const p=(t.bin+'').split('·');
+    return p.length===3?`${su.name} · D${p[0]} R${p[1]} C${p[2]}`:`${su.name} · D${t.bin}`;
+  }
+  return su.name;
 }
 
 // ── MODE ──────────────────────────────────────────────────────────────────────
@@ -792,27 +838,44 @@ function renderCatFields(){
 // ── LOCATION PICKER ───────────────────────────────────────────────────────────
 function renderLocPicker(containerId, currentStorageId='', currentBin='', currentSection=''){
   const container=document.getElementById(containerId);if(!container)return;
-  if(!storageUnits.length){container.innerHTML='<div style="font-size:12px;color:var(--muted)">No storage units — add one in Settings</div>';return;}
-
+  if(!storageUnits.length){container.innerHTML='<div style="font-size:12px;color:var(--muted)">No storage units — add one in Storage tab</div>';return;}
   const suSel=`<div class="loc-field"><div class="loc-field-label">Storage</div><select class="loc-sel" id="${containerId}_su" onchange="updateLocPicker('${containerId}')" style="min-width:130px">
     <option value="">— Select —</option>
     ${storageUnits.map(s=>`<option value="${s.id}"${s.id===currentStorageId?' selected':''}>${TYPE_META[s.type]?.icon||'🗄️'} ${s.name}</option>`).join('')}
   </select></div>`;
-
   const su=getSU(currentStorageId);
-  let slotSel='',secSel='';
+  let slotSel='';
   if(su){
-    const tm=TYPE_META[su.type]||TYPE_META.bins;
-    slotSel=`<div class="loc-field"><div class="loc-field-label">${tm.slotLabel}</div><input class="loc-sel" type="number" id="${containerId}_bin" min="1" max="${su.count}" placeholder="—" style="width:65px" value="${currentBin}"></div>`;
-    if(su.type==='bins'&&su.sections>1){
-      const opts=['','A','B'];
-      if(su.sections>=3)opts.push('C');
-      secSel=`<div class="loc-field"><div class="loc-field-label">Section</div><select class="loc-sel" id="${containerId}_sec" style="width:65px">
-        ${opts.map(o=>`<option value="${o}"${o===currentSection?' selected':''}>${o||'—'}</option>`).join('')}
-      </select></div>`;
+    if(su.type==='bins'){
+      slotSel=`<div class="loc-field"><div class="loc-field-label">Bin</div><input class="loc-sel" type="number" id="${containerId}_bin" min="1" max="${su.count}" placeholder="—" style="width:65px" value="${currentBin}"></div>`;
+      if(su.sections>1){
+        const opts=['','A','B'];if(su.sections>=3)opts.push('C');
+        slotSel+=`<div class="loc-field"><div class="loc-field-label">Section</div><select class="loc-sel" id="${containerId}_sec" style="width:65px">${opts.map(o=>`<option value="${o}"${o===currentSection?' selected':''}>${o||'—'}</option>`).join('')}</select></div>`;
+      }
+    }else if(su.type==='shelves'){
+      const labels=su.slotLabels||[];
+      const opts=Array.from({length:su.count},(_,i)=>labels[i]||`Slot ${i+1}`);
+      const curIdx=currentBin?parseInt(currentBin)-1:0;
+      slotSel=`<div class="loc-field"><div class="loc-field-label">Slot</div><select class="loc-sel" id="${containerId}_bin" style="min-width:120px">${opts.map((l,i)=>`<option value="${i+1}"${i===curIdx?' selected':''}>${l}</option>`).join('')}</select></div>`;
+    }else if(su.type==='drawers'){
+      const parts=(currentBin+'').split('·');
+      const curD=parts[0]||'1',curR=parts[1]||'1',curC=parts[2]||'1';
+      const rows=su.drawerRows||2,cols=su.drawerCols||3;
+      slotSel=`<div class="loc-field"><div class="loc-field-label">Drawer</div><select class="loc-sel" id="${containerId}_drw" style="width:60px" onchange="syncDrawerLoc('${containerId}')">${Array.from({length:su.count},(_,i)=>`<option value="${i+1}"${i+1==curD?' selected':''}>D${i+1}</option>`).join('')}</select></div>
+      <div class="loc-field"><div class="loc-field-label">Row</div><select class="loc-sel" id="${containerId}_row" style="width:56px" onchange="syncDrawerLoc('${containerId}')">${Array.from({length:rows},(_,i)=>`<option value="${i+1}"${i+1==curR?' selected':''}>R${i+1}</option>`).join('')}</select></div>
+      <div class="loc-field"><div class="loc-field-label">Col</div><select class="loc-sel" id="${containerId}_col" style="width:56px" onchange="syncDrawerLoc('${containerId}')">${Array.from({length:cols},(_,i)=>`<option value="${i+1}"${i+1==curC?' selected':''}>C${i+1}</option>`).join('')}</select></div>
+      <input type="hidden" id="${containerId}_bin" value="${currentBin||'1·1·1'}">`;
     }
   }
-  container.innerHTML=suSel+slotSel+secSel;
+  container.innerHTML=suSel+slotSel;
+}
+
+function syncDrawerLoc(containerId){
+  const d=document.getElementById(containerId+'_drw')?.value||'1';
+  const r=document.getElementById(containerId+'_row')?.value||'1';
+  const c=document.getElementById(containerId+'_col')?.value||'1';
+  const bin=document.getElementById(containerId+'_bin');
+  if(bin)bin.value=`${d}·${r}·${c}`;
 }
 
 function updateLocPicker(containerId){
@@ -852,10 +915,31 @@ function renderBrandList(){
 function selectStorageType(type){
   newStorageType=type;
   ['bins','shelves','drawers'].forEach(t=>document.getElementById('type-'+t).classList.toggle('selected',t===type));
-  const tm=TYPE_META[type];
-  document.getElementById('suCountLabel').textContent=`Number of ${tm.label}`;
-  document.getElementById('suSectionRow').style.display=type==='bins'?'flex':'none';
-  document.getElementById('suCount').value=type==='bins'?48:type==='shelves'?6:8;
+  document.getElementById('suBinsOptions').style.display=type==='bins'?'block':'none';
+  document.getElementById('suShelvesOptions').style.display=type==='shelves'?'block':'none';
+  document.getElementById('suDrawersOptions').style.display=type==='drawers'?'block':'none';
+  if(type==='shelves')generateShelfLabels();
+  if(type==='drawers')previewDrawerGrid();
+}
+
+function generateShelfLabels(){
+  const count=parseInt(document.getElementById('suShelfCount')?.value)||6;
+  const existing=[];
+  document.querySelectorAll('#suShelfLabels input').forEach(i=>existing.push(i.value));
+  const container=document.getElementById('suShelfLabels');if(!container)return;
+  container.innerHTML=Array.from({length:count},(_,i)=>`
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:10px;color:var(--muted);min-width:46px;font-family:'DM Mono',monospace">Slot ${i+1}</div>
+      <input type="text" id="suShelfLabel_${i}" placeholder="e.g. Top Shelf, Big Tub" value="${existing[i]||''}" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none">
+    </div>`).join('');
+}
+
+function previewDrawerGrid(){
+  const drawers=parseInt(document.getElementById('suDrawerCount')?.value)||1;
+  const rows=parseInt(document.getElementById('suDrawerRows')?.value)||1;
+  const cols=parseInt(document.getElementById('suDrawerCols')?.value)||1;
+  const el=document.getElementById('drawerGridPreview');if(!el)return;
+  el.innerHTML=`${drawers} drawer${drawers>1?'s':''} × ${rows} row${rows>1?'s':''} × ${cols} col${cols>1?'s':''} = <b style="color:var(--text)">${drawers*rows*cols} slots total</b><br>Location example: <span style="color:var(--accent2);font-family:'DM Mono',monospace">D1 R1 C1 → D${drawers} R${rows} C${cols}</span>`;
 }
 
 function openAddStorageModal(editId=null){
@@ -865,15 +949,32 @@ function openAddStorageModal(editId=null){
     const su=getSU(editId);if(!su)return;
     document.getElementById('suName').value=su.name;
     document.getElementById('suDesc').value=su.desc||'';
-    document.getElementById('suCount').value=su.count;
-    document.getElementById('suSections').value=su.sections||2;
     selectStorageType(su.type);
     newStorageType=su.type;
+    if(su.type==='bins'){
+      document.getElementById('suCount').value=su.count;
+      document.getElementById('suSections').value=su.sections||2;
+    }else if(su.type==='shelves'){
+      document.getElementById('suShelfCount').value=su.count;
+      setTimeout(()=>{
+        generateShelfLabels();
+        (su.slotLabels||[]).forEach((lbl,i)=>{const el=document.getElementById(`suShelfLabel_${i}`);if(el)el.value=lbl;});
+      },30);
+    }else if(su.type==='drawers'){
+      document.getElementById('suDrawerCount').value=su.count;
+      document.getElementById('suDrawerRows').value=su.drawerRows||2;
+      document.getElementById('suDrawerCols').value=su.drawerCols||3;
+      previewDrawerGrid();
+    }
   }else{
     document.getElementById('suName').value='';
     document.getElementById('suDesc').value='';
     document.getElementById('suCount').value=48;
     document.getElementById('suSections').value=2;
+    document.getElementById('suShelfCount').value=6;
+    document.getElementById('suDrawerCount').value=5;
+    document.getElementById('suDrawerRows').value=2;
+    document.getElementById('suDrawerCols').value=3;
     selectStorageType('bins');
   }
   document.getElementById('addStorageModalBg').classList.add('show');
@@ -883,18 +984,23 @@ function saveStorageUnit(){
   const name=document.getElementById('suName').value.trim();
   if(!name){showToast('Name required',true);return;}
   const editId=document.getElementById('editStorageId').value;
-  const su={
-    id:editId||('su'+Date.now()),
-    name,type:newStorageType,
-    count:parseInt(document.getElementById('suCount').value)||10,
-    sections:parseInt(document.getElementById('suSections').value)||2,
-    desc:document.getElementById('suDesc').value.trim(),
-  };
+  let su={id:editId||('su'+Date.now()),name,type:newStorageType,desc:document.getElementById('suDesc').value.trim()};
+  if(newStorageType==='bins'){
+    su.count=parseInt(document.getElementById('suCount').value)||10;
+    su.sections=parseInt(document.getElementById('suSections').value)||2;
+  }else if(newStorageType==='shelves'){
+    su.count=parseInt(document.getElementById('suShelfCount').value)||6;
+    su.slotLabels=Array.from({length:su.count},(_,i)=>document.getElementById(`suShelfLabel_${i}`)?.value.trim()||'');
+  }else if(newStorageType==='drawers'){
+    su.count=parseInt(document.getElementById('suDrawerCount').value)||5;
+    su.drawerRows=parseInt(document.getElementById('suDrawerRows').value)||2;
+    su.drawerCols=parseInt(document.getElementById('suDrawerCols').value)||3;
+  }
   if(editId){const idx=storageUnits.findIndex(s=>s.id===editId);if(idx>=0)storageUnits[idx]=su;else storageUnits.push(su);}
   else storageUnits.push(su);
   save('ts_storage',storageUnits);
   closeAddStorageModal();
-  renderStorageUnitList();
+  renderStorageUnitChips();
   populateStorageSelect();
   showToast(editId?'Updated':'Storage unit added');
 }
@@ -903,51 +1009,40 @@ function deleteStorageUnit(id){
   if(!confirm('Delete this storage unit? Tools assigned here will lose their location.'))return;
   storageUnits=storageUnits.filter(s=>s.id!==id);
   save('ts_storage',storageUnits);
-  renderStorageUnitList();
+  renderStorageUnitChips();
   populateStorageSelect();
   showToast('Deleted');
 }
 
 function closeAddStorageModal(e){if(!e||e.target===document.getElementById('addStorageModalBg'))document.getElementById('addStorageModalBg').classList.remove('show');}
 
-function renderStorageUnitList(){
-  const el=document.getElementById('storageUnitList');if(!el)return;
-  if(!storageUnits.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0 10px">No storage units yet</div>';return;}
+function renderStorageUnitChips(){
+  const el=document.getElementById('storageUnitChips');if(!el)return;
+  if(!storageUnits.length){el.innerHTML='';return;}
   el.innerHTML=storageUnits.map(su=>{
     const tm=TYPE_META[su.type]||TYPE_META.bins;
     const toolCount=tools.filter(t=>t.storageId===su.id).length;
-    return`<div class="su-card">
-      <div class="su-card-top">
-        <div class="su-icon">${tm.icon}</div>
-        <div class="su-name">${su.name}</div>
-        <div class="su-type">${tm.label}</div>
+    return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:7px 10px;display:flex;align-items:center;gap:7px">
+      <span style="font-size:15px">${tm.icon}</span>
+      <div>
+        <div style="font-size:11px;font-weight:700">${su.name}</div>
+        <div style="font-size:9px;color:var(--muted)">${toolCount} item${toolCount!==1?'s':''}</div>
       </div>
-      <div class="su-detail">${su.count} ${tm.label.toLowerCase()}${su.type==='bins'&&su.sections>1?' · Sections A-'+['','B','C'][su.sections-1]:''}${su.desc?' · '+su.desc:''}</div>
-      <div class="su-detail" style="margin-top:4px">${toolCount} item${toolCount!==1?'s':''} stored here</div>
-      <div class="su-actions">
-        <button class="su-btn" onclick="openAddStorageModal('${su.id}')">✏️ Edit</button>
-        <button class="su-btn del" onclick="deleteStorageUnit('${su.id}')">🗑 Delete</button>
-      </div>
+      <button onclick="openAddStorageModal('${su.id}')" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:10px;color:var(--muted);cursor:pointer;margin-left:2px">✏️</button>
+      <button onclick="deleteStorageUnit('${su.id}')" style="flex-shrink:0;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:3px 7px;font-size:10px;color:var(--warn);cursor:pointer">✕</button>
     </div>`;
   }).join('');
 }
 
-function renderStorageUnitListInline(){
-  const el=document.getElementById('storageUnitListInline');if(!el)return;
-  if(!storageUnits.length){el.innerHTML='';return;}
-  el.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 2px">` +
-    storageUnits.map(su=>{
-      const tm=TYPE_META[su.type]||TYPE_META.bins;
-      const toolCount=tools.filter(t=>t.storageId===su.id).length;
-      return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 11px;display:flex;align-items:center;gap:8px;min-width:0">
-        <span style="font-size:16px">${tm.icon}</span>
-        <div style="min-width:0">
-          <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${su.name}</div>
-          <div style="font-size:10px;color:var(--muted)">${toolCount} items</div>
-        </div>
-        <button onclick="openAddStorageModal('${su.id}')" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10px;color:var(--muted);cursor:pointer">✏️</button>
-      </div>`;
-    }).join('') + `</div>`;
+// ── CONTACTS MODAL ────────────────────────────────────────────────────────────
+function openContactsModal(){
+  loadProcSettings();
+  renderSupplierList();
+  document.getElementById('contactsModalBg').classList.add('show');
+}
+function closeContactsModal(e){
+  if(!e||e.target===document.getElementById('contactsModalBg'))
+    document.getElementById('contactsModalBg').classList.remove('show');
 }
 
 function populateStorageSelect(){
@@ -1319,18 +1414,15 @@ function renderStorageView(){
   const su=getSU(suId);
   const el=document.getElementById('storageView');
   if(!su){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:40px 0">Select a storage unit above</div>';return;}
-  const tm=TYPE_META[su.type]||TYPE_META.bins;
 
   if(su.type==='bins'){
-    // Grid view for bins
     let html='<div class="bin-grid-wrap">';
     for(let b=1;b<=su.count;b++){
       const inBin=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(b));
       const qty=inBin.reduce((s,t)=>s+t.qty,0);
-      // Show size/diameter instead of part number for cleaner bin view
       const preview=inBin.slice(0,2).map(t=>{
         const size=t.diameter||t.shape||'';
-        return size ? size : (t.partNumber||'').replace(/[A-Z]{2,}\s*/,'').trim().slice(0,8);
+        return size?size:(t.partNumber||'').replace(/[A-Z]{2,}\s*/,'').trim().slice(0,8);
       }).join('<br>');
       html+=`<div class="bin-cell${qty?' has-stock':' spare'}" onclick="openSlotModal('${suId}',${b})">
         <div class="bc-num">BIN ${b}</div>
@@ -1340,15 +1432,17 @@ function renderStorageView(){
     }
     html+='</div>';
     el.innerHTML=html;
-  }else{
-    // List view for shelves/drawers
+
+  }else if(su.type==='shelves'){
+    const labels=su.slotLabels||[];
     let html='<div style="display:flex;flex-direction:column;gap:6px">';
     for(let b=1;b<=su.count;b++){
       const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(b));
       const qty=inSlot.reduce((s,t)=>s+t.qty,0);
+      const label=labels[b-1]||`Slot ${b}`;
       const preview=inSlot.slice(0,2).map(t=>`${t.brand||''} ${t.partNumber}`).join(', ');
       html+=`<div class="storage-cell${qty?' has-stock':''}" onclick="openSlotModal('${suId}',${b})">
-        <div class="sc-num${qty?' has-s':''}">${tm.slotLabel} ${b}</div>
+        <div class="sc-num${qty?' has-s':''}">${label}</div>
         <div class="sc-main">
           <div class="sc-preview">${qty?preview:'Empty'}</div>
           ${qty?`<div class="sc-qty">${qty} pcs · ${inSlot.length} item${inSlot.length!==1?'s':''}</div>`:''}
@@ -1357,14 +1451,58 @@ function renderStorageView(){
     }
     html+='</div>';
     el.innerHTML=html;
+
+  }else if(su.type==='drawers'){
+    const rows=su.drawerRows||2;
+    const cols=su.drawerCols||3;
+    let html='<div style="display:flex;flex-direction:column;gap:10px">';
+    for(let d=1;d<=su.count;d++){
+      // All tools in this drawer
+      const inDrawer=tools.filter(t=>t.storageId===suId&&(t.bin+'').startsWith(d+'·'));
+      const drawerQty=inDrawer.reduce((s,t)=>s+t.qty,0);
+      html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="background:var(--surface);padding:9px 13px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px">
+          <span>🗃️ Drawer ${d}</span>
+          ${drawerQty?`<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${drawerQty} pcs</span>`:'<span style="font-size:10px;color:var(--muted)">empty</span>'}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:4px;padding:8px">`;
+      for(let r=1;r<=rows;r++){
+        for(let c=1;c<=cols;c++){
+          const slotKey=`${d}·${r}·${c}`;
+          const inCell=tools.filter(t=>t.storageId===suId&&t.bin===slotKey);
+          const cellQty=inCell.reduce((s,t)=>s+t.qty,0);
+          const preview=inCell[0]?((inCell[0].diameter||inCell[0].partNumber||'').slice(0,10)):'';
+          html+=`<div onclick="openDrawerCell('${suId}','${slotKey}')" style="background:${cellQty?'rgba(59,130,246,.1)':'var(--bg)'};border:1px solid ${cellQty?'var(--accent2)':'var(--border)'};border-radius:7px;padding:6px 5px;text-align:center;cursor:pointer;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+            <div style="font-size:8px;color:var(--muted);font-family:'DM Mono',monospace">R${r}C${c}</div>
+            ${cellQty?`<div style="font-size:9px;color:var(--text);line-height:1.3;overflow:hidden;max-height:28px">${preview}</div><div style="font-size:8px;color:var(--accent2)">${cellQty}pc</div>`:`<div style="font-size:10px;color:var(--border)">—</div>`}
+          </div>`;
+        }
+      }
+      html+=`</div></div>`;
+    }
+    html+='</div>';
+    el.innerHTML=html;
   }
+}
+
+function openDrawerCell(suId, slotKey){
+  const su=getSU(suId);if(!su)return;
+  const inCell=tools.filter(t=>t.storageId===suId&&t.bin===slotKey);
+  const parts=slotKey.split('·');
+  const title=`${su.name} · D${parts[0]} R${parts[1]} C${parts[2]}`;
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalSub').textContent=inCell.length?`${inCell.length} item${inCell.length>1?'s':''} · ${inCell.reduce((s,t)=>s+t.qty,0)} pcs`:'Empty';
+  document.getElementById('modalItems').innerHTML=inCell.length
+    ?inCell.map(t=>toolCard(t)).join('')
+    :'<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">Nothing stored here yet</div>';
+  document.getElementById('modalBg').classList.add('show');
 }
 
 function openSlotModal(suId,slotNum){
   const su=getSU(suId);if(!su)return;
-  const tm=TYPE_META[su.type]||TYPE_META.bins;
   const inSlot=tools.filter(t=>t.storageId===suId&&String(t.bin)===String(slotNum));
-  document.getElementById('modalTitle').textContent=`${su.name} · ${tm.slotLabel} ${slotNum}`;
+  const slotLabel=su.type==='shelves'?((su.slotLabels||[])[parseInt(slotNum)-1]||`Slot ${slotNum}`):`${TYPE_META[su.type]?.slotLabel||'Slot'} ${slotNum}`;
+  document.getElementById('modalTitle').textContent=`${su.name} · ${slotLabel}`;
   document.getElementById('modalSub').textContent=inSlot.length?`${inSlot.length} item${inSlot.length>1?'s':''} · ${inSlot.reduce((s,t)=>s+t.qty,0)} pcs total`:'Empty';
 
   if(!inSlot.length){
@@ -1482,8 +1620,7 @@ function switchTab(tab){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   if(tab==='inventory')renderInventory();
-  if(tab==='storage'){populateStorageSelect();renderStorageView();renderStorageUnitListInline();}
-  if(tab==='contacts'){renderSupplierList();loadProcSettings();}
+  if(tab==='storage'){populateStorageSelect();renderStorageView();renderStorageUnitChips();}
   if(tab==='settings'){renderBrandList();}
 }
 
