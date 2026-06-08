@@ -1671,7 +1671,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.1';
 
 async function checkForUpdate() {
   const btn = document.getElementById('updateBtn');
@@ -2557,7 +2557,7 @@ function applyImport(){
         coolantThrough: item.mapped.coolant,
           material: item.mapped.material||'',
           drillDepth: item.mapped.drillDepth||'',
-          tapType: item.mapped.tapType||'',t,
+          tapType: item.mapped.tapType||'',
         notes: item.mapped.notes,
         qty: item.qty,
         storageId: '', bin: '', section: '',
