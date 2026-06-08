@@ -1671,7 +1671,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.1';
+const APP_VERSION = '3.2';
 
 async function checkForUpdate() {
   const btn = document.getElementById('updateBtn');
@@ -2343,27 +2343,6 @@ function copyReorder() {
 // Init
 updateCount();
 populateStorageSelect();
-// Version display + intro
-(function(){
-  var vEl=document.getElementById('appVersionDisplay');
-  var dEl=document.getElementById('appVersionDate');
-  if(vEl) vEl.textContent=APP_VERSION;
-  if(dEl){
-    var key='ts_vdate_'+APP_VERSION;
-    if(!localStorage.getItem(key)) localStorage.setItem(key,new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}));
-    dEl.textContent=localStorage.getItem(key)||'';
-  }
-  try{
-    var intro=document.getElementById('introScreen');
-    var ic=document.getElementById('introContent');
-    var id=document.getElementById('introDivider');
-    if(!intro||!ic) return;
-    var fail=setTimeout(function(){if(intro)intro.style.display='none';},6000);
-    setTimeout(function(){try{ic.style.opacity='1';ic.style.transform='translateY(0)';if(id)id.style.width='110px';}catch(e){}},120);
-    setTimeout(function(){try{clearTimeout(fail);intro.style.transition='opacity .5s ease';intro.style.opacity='0';setTimeout(function(){intro.style.display='none';},500);}catch(e){if(intro)intro.style.display='none';}},4000);
-  }catch(e){var s=document.getElementById('introScreen');if(s)s.style.display='none';}
-
-// ── SPREADSHEET IMPORT ────────────────────────────────────────────────────────
 let importPreviewData = [];
 
 function showImportBox(){
@@ -2578,6 +2557,28 @@ function applyImport(){
   renderInventory();
 }
 
+
+// Version display + intro
+(function(){
+  var vEl=document.getElementById('appVersionDisplay');
+  var dEl=document.getElementById('appVersionDate');
+  if(vEl) vEl.textContent=APP_VERSION;
+  if(dEl){
+    var key='ts_vdate_'+APP_VERSION;
+    if(!localStorage.getItem(key)) localStorage.setItem(key,new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}));
+    dEl.textContent=localStorage.getItem(key)||'';
+  }
+  try{
+    var intro=document.getElementById('introScreen');
+    var ic=document.getElementById('introContent');
+    var id=document.getElementById('introDivider');
+    if(!intro||!ic) return;
+    var fail=setTimeout(function(){if(intro)intro.style.display='none';},6000);
+    setTimeout(function(){try{ic.style.opacity='1';ic.style.transform='translateY(0)';if(id)id.style.width='110px';}catch(e){}},120);
+    setTimeout(function(){try{clearTimeout(fail);intro.style.transition='opacity .5s ease';intro.style.opacity='0';setTimeout(function(){intro.style.display='none';},500);}catch(e){if(intro)intro.style.display='none';}},4000);
+  }catch(e){var s=document.getElementById('introScreen');if(s)s.style.display='none';}
+
+// ── SPREADSHEET IMPORT ────────────────────────────────────────────────────────
 })();
 </script>
 <!-- Import Preview Modal -->
