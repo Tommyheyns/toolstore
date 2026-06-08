@@ -725,7 +725,7 @@ const CAT_META={
   other:       {icon:'⚪',label:'Other',            color:'#6b7899'},
 };
 const CAT_KEYS=Object.keys(CAT_META);
-const APP_VERSION='2.4';
+const APP_VERSION='2.5';
 const DEFAULT_BRANDS=['Gühring','ISCAR','SECO','Sandvik Coromant','Kennametal','Walter','Mitsubishi','Sumitomo','Kyocera'];
 const TYPE_META={
   bins:   {icon:'🗄️',label:'Bins',    slotLabel:'Bin',     hasSection:true},
@@ -1109,7 +1109,7 @@ Rules:
 - The part number usually looks like: 5725-4,826 or ICP 0531 or SPGX11T3-C1
 
 Return ONLY raw JSON:
-{"brand":"","partNumber":"exact part number only","qty":1,"tapRing":"if visible: Gold/Blue/Bright/Red ring colour on the tool, else empty"}`}
+{"brand":"","partNumber":"exact part number only","qty":1,"tapRing":"if visible: Gold/Blue/Bright/Red ring colour on the tool, else empty","tapThread":"if this is a tap, copy the thread designation EXACTLY as printed e.g. 1/8 BSPT or 1/16 NPT or M10x1.5 or #10-24 UNC — do NOT convert to metric"}`}
       ]}]})
     });
     if(r1.ok){
@@ -1153,6 +1153,10 @@ ${searchSite?'Search '+searchSite+' for this exact part number to get all specif
 
 Using your training data AND web knowledge about this part number, provide complete verified specifications.
 
+CRITICAL RULE FOR TAPS: Use the thread designation EXACTLY as it appears on the label. 
+DO NOT convert imperial to metric. 1/8 BSPT stays 1/8 BSPT. 1/16 NPT stays 1/16 NPT. #10-24 UNC stays #10-24 UNC. Never say "6mm" when label says "1/4 inch".
+The thread field from label is: ${partData.tapThread||'not a tap or not visible'}
+
 GÜHRING KNOWLEDGE:
 5511/5514 = solid carbide drill (solid_drill) — RT100U, nano-FIREX, coolant through
 5516/5525/5537/5562/5584/5735 = solid carbide end mill (end_mill)
@@ -1194,6 +1198,9 @@ Return ONLY raw JSON:
   p.partNumber = partData.partNumber;
   p.brand = p.brand || partData.brand;
   if(partData.tapRing && !p.tapRing) p.tapRing = partData.tapRing;
+  // Always use thread size exactly from label — never convert imperial to metric
+  if(partData.tapThread) p.tapThread = partData.tapThread;
+  if(partData.tapThread) p.diameter = partData.tapThread; // use label thread as diameter field
 
   // Set category
   const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',solid_drill:'solid_drill',drill_holder:'drill_holder',other:'other'};
@@ -1749,6 +1756,8 @@ function fillAIResult(p){
   const foEl=document.getElementById('fOAL');if(foEl)foEl.value=p.oal||'';
   const frEl=document.getElementById('fReach');if(frEl)frEl.value=[p.reach,p.flutes?p.flutes+'fl':''].filter(Boolean).join(' / ');
   const ftEl=document.getElementById('fTapRing');if(ftEl)ftEl.value=p.tapRing||'';
+  // For taps — use exact thread from label as diameter field
+  if(p.tapThread){const dEl2=document.getElementById('fDiam');if(dEl2&&!dEl2.value)dEl2.value=p.tapThread;}
   document.getElementById('fGrade').value=p.grade||'';
   document.getElementById('fQty').value=p.qty||1;
   document.getElementById('fNotes').value=p.notes||'';
