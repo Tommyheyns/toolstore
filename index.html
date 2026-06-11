@@ -1915,7 +1915,19 @@ function fillAIResult(p){
   document.getElementById('resultCard').classList.add('show');
   document.getElementById('analyseBtn').disabled=false;
   // Trigger background verify to cross-check specs
-  verifySingleAfterScan(p.brand||'', p.partNumber||'', p.notes||'');
+  // Don't auto-verify — show a manual verify button instead for speed
+  const header=document.querySelector('#resultCard .result-header');
+  if(header){
+    const verifyBtn=document.createElement('button');
+    verifyBtn.id='scanVerifyBtn';
+    verifyBtn.textContent='🔍 Verify';
+    verifyBtn.style.cssText='margin-left:8px;padding:3px 10px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:"DM Mono",monospace;font-size:11px;cursor:pointer;vertical-align:middle';
+    verifyBtn.onclick=()=>{
+      verifyBtn.remove();
+      verifySingleAfterScan(p.brand||'', p.partNumber||'', p.notes||'');
+    };
+    header.appendChild(verifyBtn);
+  }
   // Check if already in stock
   const pnCheck=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
   const brCheck=(p.brand||'').toLowerCase();
@@ -1979,7 +1991,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.12';
+const APP_VERSION = '3.13';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -1987,7 +1999,14 @@ const APP_VERSION = '3.12';
  *  Single-file PWA · Entec Resources · github.com/Tommyheyns/toolstore
  * ════════════════════════════════════════════════════════
  *
- *  v3.12 (current)
+ *  v3.13 (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Scan verify is now on-demand — result card appears
+ *    instantly with a small "🔍 Verify" button
+ *  - Tap Verify only when you want the catalog check
+ *  - Eliminates the "stuck on AI Reading" wait after scan
+ *
+ *  v3.12
  *  ─────────────────────────────────────────────────────
  *  - Smart Gühring duplicate detection: scanned label
  *    "4112-29.5" matches stored EDP "9041120295000"
