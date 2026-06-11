@@ -1967,7 +1967,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.9';
+const APP_VERSION = '3.10';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -1975,7 +1975,15 @@ const APP_VERSION = '3.9';
  *  Single-file PWA · Entec Resources · github.com/Tommyheyns/toolstore
  * ════════════════════════════════════════════════════════
  *
- *  v3.9  (current)
+ *  v3.10 (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Auto-Fix: prompt now explicitly requires catalog
+ *    part number to match the tool's current diameter
+ *  - Prevents AI from applying a "closest match" from
+ *    a different size in the same series
+ *  - If diameter is wrong, fixes diameter instead of PN
+ *
+ *  v3.9
  *  ─────────────────────────────────────────────────────
  *  - Audit Auto-Fix: re-verify now uses fresh tool data
  *    after fixes are applied, not stale pre-fix values
@@ -3044,7 +3052,7 @@ async function auditAutoFix(id){
       body:JSON.stringify({
         model:'gpt-4o',
         tools:[{type:'web_search_preview'}],
-        input:`You previously audited this cutting tool and found issues. Now return ONLY a JSON object with the corrected field values based on what the manufacturer's catalog actually shows. Do not include fields that are already correct — only include fields that need changing.\n\nCurrent tool data:\nBrand: ${t.brand||'unknown'}\nPart Number: ${t.partNumber||'unknown'}\nCategory: ${(CAT_META[t.cat]||CAT_META.other).label}\nDiameter: ${t.diameter||'not recorded'}\nGrade/Coating: ${t.grade||'not recorded'}\nNotes: ${t.notes||'none'}\n\nIssues found:\n${issueText}\n\nReturn ONLY raw JSON with any of these keys that need correcting:\n{"partNumber":"corrected if wrong","diameter":"corrected if wrong","grade":"corrected if wrong","cat":"one of: ${catKeys}","brand":"corrected if wrong","notes":"corrected if wrong"}\n\nDo not include a key if its current value is already correct. Return only the JSON object, no other text.`
+        input:`You previously audited this cutting tool and found issues. Search the manufacturer's catalog NOW for the correct part number that matches ALL of the current tool specs — especially the diameter. Do NOT use a part number from a different size.\n\nCurrent tool data:\nBrand: ${t.brand||'unknown'}\nPart Number: ${t.partNumber||'unknown'}\nCategory: ${(CAT_META[t.cat]||CAT_META.other).label}\nDiameter: ${t.diameter||'not recorded'} ← this is the actual physical size of the tool\nGrade/Coating: ${t.grade||'not recorded'}\nNotes: ${t.notes||'none'}\n\nPrevious audit finding:\n${issueText}\n\nIMPORTANT: If correcting the part number, you MUST verify the catalog entry for that part number shows the same diameter as above (${t.diameter||'not recorded'}). If the diameter doesn't match, do not change the part number — instead correct the diameter field to what the catalog shows for the current part number.\n\nReturn ONLY raw JSON with fields that need correcting:\n{"partNumber":"corrected EDP/catalog number matching this exact diameter","diameter":"corrected diameter if the current value is wrong","grade":"corrected if wrong","cat":"one of: ${catKeys}","brand":"corrected if wrong","notes":"corrected if wrong"}\n\nOnly include fields that genuinely need changing. Return only the JSON object, no other text.`
       })
     });
     const data=await resp.json();
