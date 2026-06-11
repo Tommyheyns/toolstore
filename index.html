@@ -1356,17 +1356,29 @@ async function analyseForAdjust(){
 function normPartNumber(raw){
   if(!raw)return '';
   let s=(raw+'').trim().toUpperCase();
-  // Remove spaces
   s=s.replace(/\s+/g,'');
-  // Gühring-style: base-diameter,decimal  e.g. 5584-12,000 or 5535-06,350
-  s=s.replace(/-(\d{1,3}[,\.]\d+)$/,'');
-  // Also handle e.g. 5584/12.000
-  s=s.replace(/\/(\d{1,3}[,\.]\d+)$/,'');
-  // Normalise remaining separators — commas to dots
+  // Gühring full EDP numbers: 9041120295000 → extract series+size → 412229.5
+  // Format: 90 + 4-digit-series + size-in-tenths + 000
+  // e.g. 9041120295000 → series=4112, size=29.5 → "411229.5"
+  const edpMatch=s.match(/^90(\d{4})(\d{3})(\d)000$/);
+  if(edpMatch){
+    const series=edpMatch[1]; // e.g. 4112
+    const sizeWhole=parseInt(edpMatch[2],10); // e.g. 029 → 29
+    const sizeDec=edpMatch[3]; // e.g. 5
+    return series+(sizeWhole+'.'+sizeDec);
+  }
+  // Gühring-style: base-diameter e.g. 4112-29.500 or 4112-29,500
+  s=s.replace(/-(\d{1,3})[,\.](\d+)$/,(m,whole,dec)=>{
+    // normalise to series+size e.g. "411229.5" (strip trailing zeros)
+    return parseFloat(whole+'.'+dec).toString().replace('.','.');
+  });
+  // Also handle slash separator e.g. 4112/29.500
+  s=s.replace(/\/(\d{1,3})[,\.](\d+)$/,(m,whole,dec)=>parseFloat(whole+'.'+dec).toString());
+  // Normalise commas to dots
   s=s.replace(/,/g,'.');
-  // Strip slashes anywhere (e.g. HGCO 21877/230 → HGCO21877230)
+  // Strip slashes anywhere
   s=s.replace(/\//g,'');
-  // Remove remaining dashes
+  // Strip dashes
   s=s.replace(/-/g,'');
   return s;
 }
@@ -1967,7 +1979,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.10';
+const APP_VERSION = '3.12';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -1975,7 +1987,21 @@ const APP_VERSION = '3.10';
  *  Single-file PWA · Entec Resources · github.com/Tommyheyns/toolstore
  * ════════════════════════════════════════════════════════
  *
- *  v3.10 (current)
+ *  v3.12 (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Smart Gühring duplicate detection: scanned label
+ *    "4112-29.5" matches stored EDP "9041120295000"
+ *    by extracting series+size from both formats
+ *  - normPartNumber now converts full EDP numbers to
+ *    series+size for comparison
+ *
+ *  v3.11
+ *  ─────────────────────────────────────────────────────
+ *  - Scan verify: 20 second timeout added — no longer
+ *    hangs on "AI Reading · Verifying…" indefinitely
+ *  - Timeout clears spinner silently, scan still works
+ *
+ *  v3.10
  *  ─────────────────────────────────────────────────────
  *  - Auto-Fix: prompt now explicitly requires catalog
  *    part number to match the tool's current diameter
@@ -2204,9 +2230,7 @@ async function verifySingleAfterScan(brand, partNumber, notes){
   const apiKey=localStorage.getItem('ts_openai_key');
   if(!apiKey)return;
   const header=document.querySelector('#resultCard .result-header');
-  const origText=header?header.childNodes[0].textContent:'';
   if(header)header.childNodes[0].textContent='AI Reading · Verifying…';
-  // Grab current form values for mismatch comparison
   const curDiam=document.getElementById('fDiam')?.value||'';
   const curShape=document.getElementById('fShape')?.value||'';
   const curCorner=(document.getElementById('fCornerRadius')||document.getElementById('fCorner'))?.value||'';
@@ -2214,16 +2238,24 @@ async function verifySingleAfterScan(brand, partNumber, notes){
   const curCat=currentScanCat||'';
   try{
     const prompt=buildVerifyPrompt(brand,partNumber,notes,curDiam,curShape,curCorner,curGrade,curCat);
+    // 20 second timeout — if verify takes too long, bail silently
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),20000);
     const resp=await fetch('https://api.openai.com/v1/responses',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-      body:JSON.stringify({model:'gpt-4o',tools:[{type:'web_search_preview'}],input:prompt})
+      body:JSON.stringify({model:'gpt-4o',tools:[{type:'web_search_preview'}],input:prompt}),
+      signal:controller.signal
     });
+    clearTimeout(timeout);
     if(!resp.ok){if(header)header.childNodes[0].textContent='AI Reading ✓';return;}
     const data=await resp.json();
     const raw=(data.output||[]).filter(b=>b.type==='message').flatMap(b=>b.content||[]).filter(b=>b.type==='output_text').map(b=>b.text).join('\n').trim();
     applyScanVerify(brand,partNumber,raw,header);
-  }catch(e){if(header)header.childNodes[0].textContent='AI Reading ✓';}
+  }catch(e){
+    // Timeout or network error — clear the spinner silently
+    if(header)header.childNodes[0].textContent='AI Reading ✓';
+  }
 }
 
 function applyScanVerify(brand,partNumber,raw,header){
