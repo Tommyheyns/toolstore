@@ -489,6 +489,9 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <button class="settings-btn" onclick="resetClaudeKey()"><span class="settings-icon">🔑</span> Reset Anthropic (Claude) Key</button>
   </div>
   <div class="settings-section">
+    <div class="settings-title">Data Tools</div>
+    <button class="settings-btn" onclick="fixGuhringEncoding()"><span class="settings-icon">🔧</span> Fix Gühring Encoding</button>
+  <div class="settings-section">
     <div class="settings-title">Custom Brands</div>
     <div id="brandList"></div>
     <button class="settings-btn" onclick="addBrandPrompt()"><span class="settings-icon">➕</span> Add Custom Brand</button>
@@ -2952,6 +2955,19 @@ function auditExportCSV(){
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='ToolingAudit_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
+}
+
+function fixGuhringEncoding(){
+  let fixed=0;
+  tools=tools.map(t=>{
+    if(t.brand&&t.brand.includes('GÃ¼hring')){
+      t.brand=t.brand.replace(/GÃ¼hring/g,'Gühring');
+      fixed++;
+    }
+    return t;
+  });
+  if(fixed>0){saveTools();renderInventory();showToast(`Fixed ${fixed} tools ✓`);}
+  else showToast('Nothing to fix — all good');
 }
 
 // Init
