@@ -1215,7 +1215,9 @@ async function doManualSearch(){
   const prompt='You are a machining tool expert. Find the exact tool: '+query+'. '+
     'SUTTON TOOLS (Australian, blue S logo): T=taps (T903=straight flute, T502=spiral flute), D=drills, E=end mills. Thread always imperial e.g. 1/4 BSP, 1/8 BSPT - NEVER convert to metric. HSGT=High Speed Ground Thread. '+
     'ISCAR: ICP/ICM/HCP=drill_insert, APKT/SEHT/OFMT=milling_insert, CNMG/TNMG/DCMT=turning_insert, IC908/IC528=grades. '+
-    'GUHRING: 5725/5726=powertap HSS-E, GOLDRING=gold oxide, 5511/5514=solid drill, 5516/5525/5537/5562/5584/5735=end mill. '+
+    'GUHRING: 5725/5726=powertap HSS-E, GOLDRING=gold oxide, 5511/5514=solid drill, 5516/5525/5537/5562/5584/5735=end mill. HGCO=Gühring EDP catalogue number prefix. '+
+    'PIPE TAPS: If thread is BSP, BSPT, NPT, NPTF, BSPF — the diameter field must be the thread designation exactly as written (e.g. "1/8 BSPT", "1/4 BSP") — NEVER convert pipe thread sizes to mm. The drill size shown on the label is NOT the tap diameter. '+
+    'PART NUMBERS: Read every character exactly as printed. Do not add, remove, or change any characters. Do not insert slashes or separators that are not on the label. If a number reads 21877230 write 21877230 not 21877/230. '+
     'CRITICAL: Never convert imperial thread sizes to metric. '+
     'Return ONLY raw JSON: {"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or solid_drill or drill_holder or other","categoryConfidence":"certain or uncertain","brand":"'+brand+'","partNumber":"best part number","diameter":"","oal":"","flutes":"","grade":"coating only","cornerRadius":"","tapRing":"","tapThread":"exact thread size","description":"clear English description","notes":"","qty":1,"confidence":"high or medium or low"}';
   try{
@@ -1258,7 +1260,7 @@ async function analyseImage(){
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
       body:JSON.stringify({model:'gpt-4o',max_tokens:700,messages:[{role:'user',content:[
         {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
-        {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from ISO code last 2 digits or label","extraField1":"pitch for taps / flutes for endmills","extraField2":"tap type","notes":"EDP, lot, barcode ref","qty":1,"confidence":"high or medium or low"}\n\nSet categoryConfidence=uncertain ONLY when you genuinely cannot tell if an insert is milling vs turning (e.g. CN/BN shapes that could be used in either a face mill body or a lathe tool). In all other cases set categoryConfidence=certain.\n\n=== BRAND IDENTIFICATION ===\nISCAR: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT → brand=ISCAR\nSECO: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D/TP2500/MF5 → brand=SECO\nGühring: 4112, 4115, 4229, 5516, 5525, 5537, 5735, RT100, SL-RATIOFRAESER → brand=Gühring\nBIG Daishowa: CN, BN prefix or label says BIG DAISHOWA SEIKI → brand=BIG Daishowa\n\n=== GÜHRING SPECIFIC ===\nGühring labels use German: A=diameter, Stück=pieces, SL-RATIOFRAESER=end mill\nPart numbers 5735, 5516, 5525, 5537, 5262 = solid carbide end mills → category=end_mill\nOn Gühring labels diameter is shown as e.g. A 12,0 — the number after A is the diameter in mm\nDIN 6527L = 4-flute solid carbide end mill\nDIN 6535 = end mill shank standard\n\n=== ISCAR SPECIFIC ===\nICP, ICM, HCP, IDI = drill inserts (go in Sumocham/Chamdrill drill body) → category=drill_insert\nSPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG = turning inserts → category=turning_insert\nGrades: IC908, IC528, IC830, IC807 = ISCAR\n\n=== SECO SPECIFIC ===\nSPGX, RPHT, RCMT, RCGX = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT = turning inserts → category=turning_insert\nSD, MDN, MEGA prefix = drills/end mills\nGrades: T400D, TP2500, TP1500, MF5 = SECO\n\n=== BIG DAISHOWA SPECIFIC ===\nCN prefix inserts (e.g. CN0906) used in face mill bodies → categoryConfidence=uncertain (could be milling or turning)\nBN prefix = ball nose inserts\nGrade ACM250F, ACM300 = BIG Daishowa\n\n=== CATEGORY RULES ===\nDRILL INSERT: ICP, ICM, HCP, IDI, Gühring 4112/4115/4229. Always have cutting diameter. Go into drill body.\nMILLING INSERT: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT, RCMT. Round/square/octagonal.\nTURNING INSERT: Lathe/boring bar inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG. Triangle/diamond/rhombic.\nTAP: ONLY if thread designation shown e.g. M6x1.0, M10x1.5, UNC, UNF. Never confuse with end mills.\nEND MILL: Solid carbide, has flutes. Gühring 5735/5516/5525/5537, SL-RATIOFRAESER, slot drills, ball nose, corner radius mills. 2-flute slot drills = end_mill.\nOTHER: reamers, boring bars, indexable drills (not insert), anything else.\n\n=== ISO CORNER RADIUS ===\nISO code last 2 digits = corner radius x 0.1mm: 02=R0.2, 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6\nGühring end mills: read corner radius from label (R-RF1 = sharp corner/no radius)\n\nBe exact with part numbers and diameters. Use web knowledge for unknown brands.`}
+        {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from ISO code last 2 digits or label","extraField1":"pitch for taps / flutes for endmills","extraField2":"tap type","notes":"EDP, lot, barcode ref","qty":1,"confidence":"high or medium or low"}\n\nSet categoryConfidence=uncertain ONLY when you genuinely cannot tell if an insert is milling vs turning (e.g. CN/BN shapes that could be used in either a face mill body or a lathe tool). In all other cases set categoryConfidence=certain.\n\n=== PART NUMBER ACCURACY ===\nRead every character of the part number exactly as printed on the label. Do not add, remove, or change any characters. Do not insert slashes or separators that are not physically on the label. If a number reads 21877230 write 21877230 not 21877/230.\n\n=== PIPE TAPS ===\nIf the thread is BSP, BSPT, NPT, NPTF or BSPF — the diameter field must contain the thread designation exactly as written on the label (e.g. "1/8 BSPT", "1/4 BSP", "3/8 NPT"). NEVER convert pipe thread sizes to mm. The drill size printed on the label (e.g. 9.728) is the recommended drill size, NOT the tap diameter — do not use it as the diameter.\n\n=== BRAND IDENTIFICATION ===\nISCAR: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT → brand=ISCAR\nSECO: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D/TP2500/MF5 → brand=SECO\nGühring: 4112, 4115, 4229, 5516, 5525, 5537, 5735, RT100, SL-RATIOFRAESER, HGCO prefix → brand=Gühring\nBIG Daishowa: CN, BN prefix or label says BIG DAISHOWA SEIKI → brand=BIG Daishowa\n\n=== GÜHRING SPECIFIC ===\nGühring labels use German: A=diameter, Stück=pieces, SL-RATIOFRAESER=end mill\nHGCO = Gühring EDP catalogue number prefix\nPart numbers 5735, 5516, 5525, 5537, 5262 = solid carbide end mills → category=end_mill\nOn Gühring labels diameter is shown as e.g. A 12,0 — the number after A is the diameter in mm\nDIN 6527L = 4-flute solid carbide end mill\nDIN 6535 = end mill shank standard\n\n=== ISCAR SPECIFIC ===\nICP, ICM, HCP, IDI = drill inserts (go in Sumocham/Chamdrill drill body) → category=drill_insert\nSPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG = turning inserts → category=turning_insert\nGrades: IC908, IC528, IC830, IC807 = ISCAR\n\n=== SECO SPECIFIC ===\nSPGX, RPHT, RCMT, RCGX = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT = turning inserts → category=turning_insert\nSD, MDN, MEGA prefix = drills/end mills\nGrades: T400D, TP2500, TP1500, MF5 = SECO\n\n=== BIG DAISHOWA SPECIFIC ===\nCN prefix inserts (e.g. CN0906) used in face mill bodies → categoryConfidence=uncertain (could be milling or turning)\nBN prefix = ball nose inserts\nGrade ACM250F, ACM300 = BIG Daishowa\n\n=== CATEGORY RULES ===\nDRILL INSERT: ICP, ICM, HCP, IDI, Gühring 4112/4115/4229. Always have cutting diameter. Go into drill body.\nMILLING INSERT: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT, RCMT. Round/square/octagonal.\nTURNING INSERT: Lathe/boring bar inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG. Triangle/diamond/rhombic.\nTAP: ONLY if thread designation shown e.g. M6x1.0, M10x1.5, UNC, UNF, BSP, BSPT, NPT. Never confuse with end mills.\nEND MILL: Solid carbide, has flutes. Gühring 5735/5516/5525/5537, SL-RATIOFRAESER, slot drills, ball nose, corner radius mills. 2-flute slot drills = end_mill.\nOTHER: reamers, boring bars, indexable drills (not insert), anything else.\n\n=== ISO CORNER RADIUS ===\nISO code last 2 digits = corner radius x 0.1mm: 02=R0.2, 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6\nGühring end mills: read corner radius from label (R-RF1 = sharp corner/no radius)\n\nBe exact with part numbers and diameters. Use web knowledge for unknown brands.`}
       ]}]})
     });
     clearInterval(ticker);
@@ -1357,14 +1359,14 @@ function normPartNumber(raw){
   // Remove spaces
   s=s.replace(/\s+/g,'');
   // Gühring-style: base-diameter,decimal  e.g. 5584-12,000 or 5535-06,350
-  // The part after the dash looks like a decimal number (mm size) — strip it
   s=s.replace(/-(\d{1,3}[,\.]\d+)$/,'');
   // Also handle e.g. 5584/12.000
   s=s.replace(/\/(\d{1,3}[,\.]\d+)$/,'');
   // Normalise remaining separators — commas to dots
   s=s.replace(/,/g,'.');
-  // Remove remaining dashes only if they separate a pure numeric suffix
-  // e.g. keep SPGX11T3-C1 → SPGX11T3C1 but don't mangle ISO codes
+  // Strip slashes anywhere (e.g. HGCO 21877/230 → HGCO21877230)
+  s=s.replace(/\//g,'');
+  // Remove remaining dashes
   s=s.replace(/-/g,'');
   return s;
 }
@@ -1965,7 +1967,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.5';
+const APP_VERSION = '3.8';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -1973,7 +1975,34 @@ const APP_VERSION = '3.5';
  *  Single-file PWA · Entec Resources · github.com/Tommyheyns/toolstore
  * ════════════════════════════════════════════════════════
  *
- *  v3.5  (current)
+ *  v3.8  (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Scan: background verify now detects mismatches on
+ *    already-filled fields, not just missing ones
+ *  - Scan: ⚠ issue banner appears on result card showing
+ *    exactly what's wrong and what it should be
+ *  - Scan: Auto-Fix Fields button patches the form in
+ *    one tap before adding to stock
+ *  - Verify uses Responses API with web_search_preview
+ *
+ *  v3.7
+ *  ─────────────────────────────────────────────────────
+ *  - Audit: Auto-Fix & Re-verify button on ⚠ issue items
+ *    GPT-4o returns corrected JSON fields, app patches
+ *    the tool, then re-runs verification automatically
+ *  - Fix history logged to audit note with date
+ *
+ *  v3.6
+ *  ─────────────────────────────────────────────────────
+ *  - Scan prompt: pipe taps (BSPT/BSP/NPT) now keep
+ *    thread designation as diameter, never converted to mm
+ *  - Scan prompt: part number accuracy — AI instructed
+ *    not to insert slashes or separators not on label
+ *  - normPartNumber: slashes stripped everywhere for
+ *    better duplicate detection
+ *  - HGCO prefix added as Gühring identifier
+ *
+ *  v3.5
  *  ─────────────────────────────────────────────────────
  *  - Audit tab AI verification switched from Claude API
  *    to OpenAI GPT-4o with web_search_preview tool
@@ -2158,61 +2187,97 @@ async function verifySingleAfterScan(brand, partNumber, notes){
   if(!brand||!partNumber)return;
   const apiKey=localStorage.getItem('ts_openai_key');
   if(!apiKey)return;
-  // Show a subtle indicator in the result header
   const header=document.querySelector('#resultCard .result-header');
   const origText=header?header.childNodes[0].textContent:'';
   if(header)header.childNodes[0].textContent='AI Reading · Verifying…';
+  // Grab current form values for mismatch comparison
+  const curDiam=document.getElementById('fDiam')?.value||'';
+  const curShape=document.getElementById('fShape')?.value||'';
+  const curCorner=(document.getElementById('fCornerRadius')||document.getElementById('fCorner'))?.value||'';
+  const curGrade=document.getElementById('fGrade')?.value||'';
+  const curCat=currentScanCat||'';
   try{
-    const prompt=buildVerifyPrompt(brand,partNumber,notes,'','','','','');
-    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+    const prompt=buildVerifyPrompt(brand,partNumber,notes,curDiam,curShape,curCorner,curGrade,curCat);
+    const resp=await fetch('https://api.openai.com/v1/responses',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-      body:JSON.stringify({model:'gpt-4o-search-preview',max_tokens:500,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'gpt-4o',tools:[{type:'web_search_preview'}],input:prompt})
     });
-    if(!resp.ok){
-      // Fallback to gpt-4o
-      const resp2=await fetch('https://api.openai.com/v1/chat/completions',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-        body:JSON.stringify({model:'gpt-4o',max_tokens:500,messages:[{role:'user',content:prompt}]})
-      });
-      if(!resp2.ok){if(header)header.childNodes[0].textContent='AI Reading ✓';return;}
-      const d2=await resp2.json();
-      applyScanVerify(brand,partNumber,d2,header);return;
-    }
+    if(!resp.ok){if(header)header.childNodes[0].textContent='AI Reading ✓';return;}
     const data=await resp.json();
-    applyScanVerify(brand,partNumber,data,header);
+    const raw=(data.output||[]).filter(b=>b.type==='message').flatMap(b=>b.content||[]).filter(b=>b.type==='output_text').map(b=>b.text).join('\n').trim();
+    applyScanVerify(brand,partNumber,raw,header);
   }catch(e){if(header)header.childNodes[0].textContent='AI Reading ✓';}
 }
 
-function applyScanVerify(brand,partNumber,data,header){
-  const raw=data.choices?.[0]?.message?.content||'';
+function applyScanVerify(brand,partNumber,raw,header){
   let p;
-  try{const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
+  try{const c=(typeof raw==='string'?raw:'').replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
   catch{if(header)header.childNodes[0].textContent='AI Reading ✓';return;}
   if(!p.found){if(header)header.childNodes[0].textContent='AI Reading ✓';return;}
 
   // Fix radius using helpers
   const fixedRadius=fixCornerRadius(brand,partNumber,p.cornerRadius||'');
-  let changed=0;
-  // Patch fields if AI has better data
+  let filled=0;
+
+  // Fill empty fields
   const dEl=document.getElementById('fDiam');
-  if(dEl&&p.diameter&&!dEl.value){dEl.value=p.diameter;changed++;}
+  if(dEl&&p.diameter&&!dEl.value){dEl.value=p.diameter;filled++;}
   const shEl=document.getElementById('fShape');
-  if(shEl&&p.shape&&!shEl.value){shEl.value=p.shape;changed++;}
+  if(shEl&&p.shape&&!shEl.value){shEl.value=p.shape;filled++;}
   const crEl=document.getElementById('fCornerRadius');
   const crEl2=document.getElementById('fCorner');
   if(fixedRadius){
-    if(crEl&&crEl.value!==fixedRadius){crEl.value=fixedRadius;changed++;}
-    if(crEl2&&crEl2.value!==fixedRadius){crEl2.value=fixedRadius;changed++;}
+    if(crEl&&!crEl.value){crEl.value=fixedRadius;filled++;}
+    if(crEl2&&!crEl2.value){crEl2.value=fixedRadius;filled++;}
   }
   const grEl=document.getElementById('fGrade');
-  if(grEl&&p.grade&&!grEl.value){grEl.value=p.grade;changed++;}
+  if(grEl&&p.grade&&!grEl.value){grEl.value=p.grade;filled++;}
   const ntEl=document.getElementById('fNotes');
-  if(ntEl&&p.description&&!ntEl.value){ntEl.value=p.description;changed++;}
+  if(ntEl&&p.description&&!ntEl.value){ntEl.value=p.description;filled++;}
 
-  if(header)header.childNodes[0].textContent='AI Reading'+(changed?` · ✓ ${changed} field${changed>1?'s':''} verified`:'  ✓ Verified');
-  if(changed)showToast(`✓ Verified — ${changed} field${changed>1?'s':''} corrected from manufacturer data`);
+  // Handle mismatches
+  const mismatches=Array.isArray(p.mismatches)?p.mismatches:[];
+  if(mismatches.length>0){
+    if(header)header.childNodes[0].textContent='AI Reading · ⚠ Issues found';
+    // Remove any existing banner
+    document.getElementById('scanVerifyBanner')?.remove();
+    const banner=document.createElement('div');
+    banner.id='scanVerifyBanner';
+    banner.style.cssText='margin:8px 15px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:11px 13px';
+    const issueLines=mismatches.map(m=>`<div style="font-size:11px;color:var(--text);margin-bottom:4px">• <b>${m.field}</b>: currently <span style="color:var(--warn)">${m.current||'blank'}</span> → should be <span style="color:var(--green)">${m.correct}</span>${m.note?' <span style="color:var(--muted)">('+m.note+')</span>':''}</div>`).join('');
+    banner.innerHTML=`
+      <div style="font-size:10px;color:var(--warn);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-bottom:7px">⚠ ${mismatches.length} mismatch${mismatches.length>1?'es':''} found</div>
+      ${issueLines}
+      <button onclick="applyScanFixes(${JSON.stringify(mismatches).replace(/"/g,'&quot;')})" style="margin-top:9px;width:100%;padding:10px;border-radius:8px;background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer">🔧 Auto-Fix Fields</button>
+    `;
+    const submitRow=document.querySelector('.submit-choices');
+    if(submitRow)submitRow.before(banner);
+  } else {
+    document.getElementById('scanVerifyBanner')?.remove();
+    if(header)header.childNodes[0].textContent='AI Reading'+(filled?` · ✓ ${filled} field${filled>1?'s':''} filled`:'  ✓ Verified');
+    if(filled)showToast(`✓ Verified — ${filled} field${filled>1?'s':''} filled from catalog`);
+  }
+}
+
+function applyScanFixes(mismatches){
+  const fieldMap={
+    diameter:'fDiam', grade:'fGrade', shape:'fShape',
+    cornerRadius:'fCornerRadius', category:'cat', brand:'fBrand',
+    partNumber:'fPart', notes:'fNotes'
+  };
+  let fixed=0;
+  mismatches.forEach(m=>{
+    const elId=fieldMap[m.field.toLowerCase().replace(/\s+/g,'')];
+    if(elId){
+      const el=document.getElementById(elId);
+      if(el){el.value=m.correct;fixed++;}
+    }
+  });
+  document.getElementById('scanVerifyBanner')?.remove();
+  const header=document.querySelector('#resultCard .result-header');
+  if(header)header.childNodes[0].textContent=`AI Reading · ✓ ${fixed} field${fixed>1?'s':''} corrected`;
+  showToast(`✓ Fixed ${fixed} field${fixed>1?'s':''}`);
 }
 
 function buildVerifyPrompt(brand,partNumber,notes,diameter,shape,cornerRadius,grade,cat){
@@ -2234,13 +2299,15 @@ Return ONLY raw JSON (no markdown):
 {
   "found": true,
   "category": "drill or milling or turning or taps or endmill or other",
-  "diameter": "exact size",
+  "diameter": "exact size from catalog",
   "shape": "insert shape code",
   "cornerRadius": "e.g. R0.4 — always with leading zero",
   "grade": "grade/coating code",
   "description": "one-line description",
-  "notes": "any extra info"
+  "notes": "any extra info",
+  "mismatches": [{"field":"diameter","current":"12mm","correct":"12.7mm","note":"Imperial size, 1/2 inch"}]
 }
+mismatches: array of fields where current data is WRONG compared to catalog. Only include if genuinely incorrect. Empty array if all correct.
 If part not found after searching: {"found": false}`;
 }
 
@@ -2909,6 +2976,7 @@ function renderAuditDrawer(id){
   document.getElementById('auditDrawerPn').textContent=t.partNumber||'—';
   const ls=locStr(t)||'—';
   const isLoading=s==='loading';
+  const isFixing=auditFixing[id];
   document.getElementById('auditDrawerBody').innerHTML=`
     <div class="audit-field-grid">
       <div class="audit-field"><div class="audit-field-label">Category</div><div class="audit-field-val">${meta.icon} ${meta.label}</div></div>
@@ -2924,19 +2992,90 @@ function renderAuditDrawer(id){
     <div class="audit-ai-section">
       <h3 style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px">
         AI Catalog Check
-        <button class="audit-mini-btn" style="margin-left:auto" onclick="auditVerifySingle(${id})" ${isLoading?'disabled':''}>${aiText?'Re-check':'Run check'}</button>
+        <button class="audit-mini-btn" style="margin-left:auto" onclick="auditVerifySingle(${id})" ${isLoading||isFixing?'disabled':''}>${aiText?'Re-check':'Run check'}</button>
       </h3>
       ${aiText||isLoading
-        ?`<div class="audit-ai-result ${aiClass}">${isLoading?'Searching manufacturer catalog…':aiText}</div>`
-        :`<div style="font-size:11px;color:var(--muted)">Tap "Run check" to verify this part against the manufacturer's online catalog using Claude AI.</div>`
+        ?`<div class="audit-ai-result ${aiClass}">${isLoading?'Searching manufacturer catalog…':isFixing?'Applying fixes…':aiText}</div>`
+        :`<div style="font-size:11px;color:var(--muted)">Tap "Run check" to verify this part against the manufacturer's online catalog.</div>`
       }
     </div>
+    ${s==='issue'&&aiText&&!isFixing?`
+    <div style="margin-top:12px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 13px">
+      <div style="font-size:10px;color:var(--warn);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;font-weight:700">⚠ Issues detected</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">AI will correct the fields, save the tool, then re-verify automatically.</div>
+      <button class="audit-btn primary" style="width:100%" onclick="auditAutoFix(${id})" ${isFixing?'disabled':''}>🔧 Auto-Fix &amp; Re-verify</button>
+    </div>`:''}
+    ${s==='issue'&&isFixing?`
+    <div style="margin-top:12px;text-align:center;padding:14px;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace">
+      Fixing fields… re-verifying…
+    </div>`:''}
     ${aiText?`<div style="margin-top:12px">
       <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Audit Note</div>
       <textarea id="auditNoteArea" rows="3" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;resize:vertical;outline:none;box-sizing:border-box">${auditNotes[id]||''}</textarea>
       <button class="audit-btn" style="margin-top:6px;width:100%" onclick="saveAuditNote(${id})">✓ Save Note</button>
     </div>`:''}
   `;
+}
+
+let auditFixing = {};
+
+async function auditAutoFix(id){
+  const key=getApiKey();if(!key)return;
+  const t=tools.find(x=>x.id===id);if(!t)return;
+  const issueText=auditResults[id];if(!issueText)return;
+
+  auditFixing[id]=true;
+  renderAuditDrawer(id);
+
+  try{
+    // Step 1 — ask GPT to return corrected fields as JSON
+    const catKeys=Object.keys(CAT_META).join(', ');
+    const resp=await fetch('https://api.openai.com/v1/responses',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({
+        model:'gpt-4o',
+        tools:[{type:'web_search_preview'}],
+        input:`You previously audited this cutting tool and found issues. Now return ONLY a JSON object with the corrected field values based on what the manufacturer's catalog actually shows. Do not include fields that are already correct — only include fields that need changing.\n\nCurrent tool data:\nBrand: ${t.brand||'unknown'}\nPart Number: ${t.partNumber||'unknown'}\nCategory: ${(CAT_META[t.cat]||CAT_META.other).label}\nDiameter: ${t.diameter||'not recorded'}\nGrade/Coating: ${t.grade||'not recorded'}\nNotes: ${t.notes||'none'}\n\nIssues found:\n${issueText}\n\nReturn ONLY raw JSON with any of these keys that need correcting:\n{"partNumber":"corrected if wrong","diameter":"corrected if wrong","grade":"corrected if wrong","cat":"one of: ${catKeys}","brand":"corrected if wrong","notes":"corrected if wrong"}\n\nDo not include a key if its current value is already correct. Return only the JSON object, no other text.`
+      })
+    });
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message);
+    const raw=(data.output||[]).filter(b=>b.type==='message').flatMap(b=>b.content||[]).filter(b=>b.type==='output_text').map(b=>b.text).join('\n').trim();
+    const clean=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+    const fixes=JSON.parse((clean.match(/\{[\s\S]*\}/)||[clean])[0]);
+
+    // Step 2 — apply fixes to the tool
+    const toolIdx=tools.findIndex(x=>x.id===id);
+    if(toolIdx===-1)throw new Error('Tool not found');
+    const fixedFields=[];
+    if(fixes.partNumber&&fixes.partNumber!==t.partNumber){tools[toolIdx].partNumber=fixes.partNumber;fixedFields.push('Part Number');}
+    if(fixes.diameter&&fixes.diameter!==t.diameter){tools[toolIdx].diameter=fixes.diameter;fixedFields.push('Diameter');}
+    if(fixes.grade&&fixes.grade!==t.grade){tools[toolIdx].grade=fixes.grade;fixedFields.push('Grade');}
+    if(fixes.cat&&fixes.cat!==t.cat&&CAT_META[fixes.cat]){tools[toolIdx].cat=fixes.cat;fixedFields.push('Category');}
+    if(fixes.brand&&fixes.brand!==t.brand){tools[toolIdx].brand=fixes.brand;fixedFields.push('Brand');}
+    if(fixes.notes&&fixes.notes!==t.notes){tools[toolIdx].notes=fixes.notes;fixedFields.push('Notes');}
+
+    saveTools();
+    auditNotes[id]=(auditNotes[id]?auditNotes[id]+'\n':'')+'Auto-fixed: '+fixedFields.join(', ')+' on '+new Date().toLocaleDateString('en-AU');
+    saveAuditData();
+    showToast(`Fixed: ${fixedFields.join(', ')||'no changes needed'}`);
+
+  }catch(e){
+    showToast('Fix failed: '+e.message,true);
+    auditFixing[id]=false;
+    renderAuditDrawer(id);
+    return;
+  }
+
+  // Step 3 — re-verify automatically
+  auditFixing[id]=false;
+  delete auditStatuses[id];
+  delete auditResults[id];
+  saveAuditData();
+  renderAudit();
+  renderAuditDrawer(id);
+  await auditVerifySingle(id);
 }
 
 function saveAuditNote(id){
