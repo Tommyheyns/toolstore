@@ -206,6 +206,65 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.error{background:var(--warn);color:#fff}
 .safe-pad{height:env(safe-area-inset-bottom,20px)}
+
+/* ── AUDIT TAB ─────────────────────────────────────────── */
+.audit-toolbar{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.audit-search{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none}
+.audit-search:focus{border-color:var(--accent)}
+.audit-sel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 8px;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;outline:none;-webkit-appearance:none}
+.audit-btn{height:38px;padding:0 13px;border-radius:10px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;transition:background .1s}
+.audit-btn:hover{background:var(--card)}
+.audit-btn:disabled{opacity:.4;cursor:default}
+.audit-btn.primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.audit-btn.primary:hover{opacity:.9}
+.audit-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px}
+.audit-stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 10px;text-align:center}
+.audit-stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.audit-stat-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}
+.audit-stat-val.red{color:var(--warn)}
+.audit-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.audit-row{display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.audit-row:last-child{border-bottom:none}
+.audit-row:active{background:var(--surface)}
+.audit-row-left{flex:1;min-width:0}
+.audit-row-pn{font-size:12px;font-weight:500;font-family:'DM Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.audit-row-sub{font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.audit-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.audit-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:14px;font-size:9px;font-weight:700;white-space:nowrap;letter-spacing:.03em}
+.audit-badge.ok{background:rgba(34,197,94,.15);color:var(--green)}
+.audit-badge.issue{background:rgba(239,68,68,.15);color:var(--warn)}
+.audit-badge.loading{background:rgba(240,165,0,.15);color:var(--accent)}
+.audit-badge.pending{background:rgba(107,120,153,.12);color:var(--muted)}
+.audit-mini-btn{height:24px;padding:0 9px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer}
+.audit-mini-btn:active{border-color:var(--accent);color:var(--accent)}
+.audit-mini-btn:disabled{opacity:.4;cursor:default}
+/* Audit progress */
+.audit-progress-wrap{display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.audit-progress-wrap.active{display:block}
+.audit-progress-bar-bg{height:5px;background:var(--border);border-radius:3px;margin-bottom:6px;overflow:hidden}
+.audit-progress-bar{height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width .35s}
+.audit-progress-label{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+/* Audit drawer */
+.audit-drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200}
+.audit-drawer-overlay.open{display:block}
+.audit-drawer{position:fixed;right:0;top:0;bottom:0;width:min(92vw,420px);background:var(--surface);border-left:1px solid var(--border);z-index:201;overflow-y:auto;transform:translateX(100%);transition:transform .2s ease}
+.audit-drawer.open{transform:translateX(0)}
+.audit-drawer-hdr{padding:16px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;position:sticky;top:0;background:var(--surface);z-index:1}
+.audit-drawer-hdr h2{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;line-height:1.3}
+.audit-drawer-hdr p{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px}
+.audit-drawer-close{background:none;border:none;cursor:pointer;color:var(--muted);font-size:22px;line-height:1;padding:2px;flex-shrink:0}
+.audit-drawer-body{padding:14px 16px}
+.audit-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.audit-field{display:flex;flex-direction:column;gap:3px}
+.audit-field-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.audit-field-val{font-size:12px;color:var(--text)}
+.audit-field-val.mono{font-family:'DM Mono',monospace}
+.audit-notes-box{background:var(--bg);border-radius:8px;padding:9px 11px;font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6}
+.audit-ai-section h3{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.audit-ai-result{background:var(--bg);border-radius:8px;padding:11px 12px;font-size:11px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;font-family:'DM Mono',monospace}
+.audit-ai-result.loading{color:var(--muted);font-style:italic}
+.audit-ai-result.issue{border-left:3px solid var(--warn)}
+.audit-ai-result.ok{border-left:3px solid var(--green)}
 </style>
 </head>
 <body>
@@ -238,6 +297,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <button class="tab active" onclick="switchTab('scan')">📷<br>Scan</button>
   <button class="tab" onclick="switchTab('inventory')">📋<br>Stock</button>
   <button class="tab" onclick="switchTab('storage')">🗄️<br>Storage</button>
+  <button class="tab" onclick="switchTab('audit')">🔍<br>Audit</button>
   <button class="tab" onclick="switchTab('settings')">⚙️<br>Settings</button>
 </div>
 
@@ -363,6 +423,50 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <div id="storageView"></div>
 </div>
 
+<!-- ══ AUDIT ══ -->
+<div class="page" id="page-audit">
+  <div class="audit-stats" id="auditStats"></div>
+  <div class="audit-toolbar">
+    <input type="text" class="audit-search" id="auditSearch" placeholder="Search part no, brand…" oninput="renderAudit()">
+    <select class="audit-sel" id="auditCatFilter" onchange="renderAudit()">
+      <option value="">All cats</option>
+      <option value="drill">🔵 Drill</option>
+      <option value="milling">🟡 Milling</option>
+      <option value="turning">🟠 Turning</option>
+      <option value="taps">🟢 Taps</option>
+      <option value="endmill">🔴 End Mills</option>
+      <option value="solid_drill">🟣 Solid Drill</option>
+      <option value="other">⚪ Other</option>
+    </select>
+    <select class="audit-sel" id="auditStatusFilter" onchange="renderAudit()">
+      <option value="">All status</option>
+      <option value="ok">✓ OK</option>
+      <option value="issue">⚠ Issues</option>
+      <option value="pending">— Pending</option>
+    </select>
+    <button class="audit-btn primary" id="auditBulkBtn" onclick="auditVerifyBulk()">▶ Verify All</button>
+    <button class="audit-btn" onclick="auditExportCSV()">↓ CSV</button>
+  </div>
+  <div class="audit-progress-wrap" id="auditProgressWrap">
+    <div class="audit-progress-bar-bg"><div class="audit-progress-bar" id="auditProgressBar"></div></div>
+    <div class="audit-progress-label" id="auditProgressLabel">Starting…</div>
+  </div>
+  <div class="audit-table-wrap" id="auditList"></div>
+</div>
+
+<!-- Audit Drawer -->
+<div class="audit-drawer-overlay" id="auditOverlay" onclick="closeAuditDrawer()"></div>
+<div class="audit-drawer" id="auditDrawer">
+  <div class="audit-drawer-hdr">
+    <div>
+      <h2 id="auditDrawerTitle"></h2>
+      <p id="auditDrawerPn"></p>
+    </div>
+    <button class="audit-drawer-close" onclick="closeAuditDrawer()">✕</button>
+  </div>
+  <div class="audit-drawer-body" id="auditDrawerBody"></div>
+</div>
+
 <!-- ══ SETTINGS ══ -->
 <div class="page" id="page-settings">
   <div class="settings-section">
@@ -382,6 +486,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <div class="settings-section">
     <div class="settings-title">API</div>
     <button class="settings-btn" onclick="resetApiKey()"><span class="settings-icon">🔑</span> Reset OpenAI API Key</button>
+    <button class="settings-btn" onclick="resetClaudeKey()"><span class="settings-icon">🔑</span> Reset Anthropic (Claude) Key</button>
   </div>
   <div class="settings-section">
     <div class="settings-title">Custom Brands</div>
@@ -1238,20 +1343,59 @@ async function analyseForAdjust(){
   }
 }
 
+// ── PART NUMBER NORMALISATION ─────────────────────────────────────────────────
+// Extracts a comparable base part number for fuzzy matching.
+// Handles cases like "5584-12,000" → "5584", "5584-12.000" → "5584",
+// "SPGX11T3-C1" → "SPGX11T3C1" (suffix kept, just normalised),
+// "CNMG 120408" → "CNMG120408"
+function normPartNumber(raw){
+  if(!raw)return '';
+  let s=(raw+'').trim().toUpperCase();
+  // Remove spaces
+  s=s.replace(/\s+/g,'');
+  // Gühring-style: base-diameter,decimal  e.g. 5584-12,000 or 5535-06,350
+  // The part after the dash looks like a decimal number (mm size) — strip it
+  s=s.replace(/-(\d{1,3}[,\.]\d+)$/,'');
+  // Also handle e.g. 5584/12.000
+  s=s.replace(/\/(\d{1,3}[,\.]\d+)$/,'');
+  // Normalise remaining separators — commas to dots
+  s=s.replace(/,/g,'.');
+  // Remove remaining dashes only if they separate a pure numeric suffix
+  // e.g. keep SPGX11T3-C1 → SPGX11T3C1 but don't mangle ISO codes
+  s=s.replace(/-/g,'');
+  return s;
+}
+
+// Returns true if two part numbers should be considered the same tool
+function partNumbersMatch(a, b){
+  if(!a||!b)return false;
+  const na=normPartNumber(a);
+  const nb=normPartNumber(b);
+  if(na===nb)return true;
+  // One is a prefix of the other (5584 matches 5584-12,000 after norm = 5584)
+  if(na.startsWith(nb)||nb.startsWith(na))return true;
+  return false;
+}
+
 function findAndShowMatches(p){
-  const pn=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
   const br=(p.brand||'').toLowerCase();
   const dm=(p.diameter||'').replace(/[^\d.]/g,'');
   const scored=tools.map(t=>{
     let score=0;
-    const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
     const tbr=(t.brand||'').toLowerCase();
     const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
-    if(pn&&tpn&&tpn===pn)score+=100;
-    else if(pn&&tpn&&(tpn.includes(pn)||pn.includes(tpn)))score+=60;
+    // Part number matching — use normalised comparison
+    const exactPNMatch=partNumbersMatch(p.partNumber,t.partNumber);
+    const pnN=normPartNumber(p.partNumber);
+    const tpnN=normPartNumber(t.partNumber);
+    if(exactPNMatch)score+=100;
+    else if(pnN&&tpnN&&(tpnN.includes(pnN)||pnN.includes(tpnN)))score+=60;
+    // Brand
     if(br&&tbr&&(tbr.includes(br)||br.includes(tbr)))score+=20;
+    // Diameter
     if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.1)score+=30;
     else if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.5)score+=10;
+    // Grade
     if(p.grade&&t.grade&&t.grade.toLowerCase()===p.grade.toLowerCase())score+=15;
     return{tool:t,score};
   }).filter(x=>x.score>=20).sort((a,b)=>b.score-a.score).slice(0,5);
@@ -1616,12 +1760,14 @@ function closeEditModal(e){if(!e||e.target===document.getElementById('editModalB
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
 function switchTab(tab){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['scan','inventory','storage','settings'][i]===tab));
+  const tabNames=['scan','inventory','storage','audit','settings'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabNames[i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   if(tab==='inventory')renderInventory();
   if(tab==='storage'){populateStorageSelect();renderStorageView();renderStorageUnitChips();}
   if(tab==='settings'){renderBrandList();}
+  if(tab==='audit'){renderAudit();}
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
@@ -1635,8 +1781,16 @@ function updateCount(){
 function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(err?' error':'');setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>t.classList.remove('show'),3200);}
 function exportCSV(){
   if(!tools.length){showToast('No tools',true);return;}
-  const h='Category,Brand,Part Number,Diameter,Shape,Grade,Qty,Storage,Slot,Section,Notes,Added\n';
-  const r=tools.map(t=>{const su=getSU(t.storageId);return[CAT_META[t.cat]?.label||t.cat,t.brand,t.partNumber,t.diameter,t.shape,t.grade,t.qty,su?.name||'',t.bin,t.section,t.notes,t.addedAt].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',');}).join('\n');
+  const h='Category,Brand,Part Number,Diameter,Shape,Grade,Qty,Description,Notes,Coolant Through,Drill Depth,Tap Type,Material Application,Storage,Slot,Section,Added\n';
+  const r=tools.map(t=>{
+    const su=getSU(t.storageId);
+    return[
+      CAT_META[t.cat]?.label||t.cat,
+      t.brand,t.partNumber,t.diameter||'',t.shape||'',t.grade||'',t.qty,
+      t.description||'',t.notes||'',t.coolantThrough||'',t.drillDepth||'',t.tapType||'',t.material||'',
+      su?.name||'',t.bin||'',t.section||'',t.addedAt||''
+    ].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',');
+  }).join('\n');
   const url=URL.createObjectURL(new Blob([h+r],{type:'text/csv'}));
   const a=document.createElement('a');a.href=url;a.download='toolstock_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);
 }
@@ -1808,7 +1962,94 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.2';
+const APP_VERSION = '3.4';
+
+/*
+ * ════════════════════════════════════════════════════════
+ *  TOOLSTORE — CHANGELOG
+ *  Single-file PWA · Entec Resources · github.com/Tommyheyns/toolstore
+ * ════════════════════════════════════════════════════════
+ *
+ *  v3.4  (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Audit tab: AI catalog verification using Claude
+ *    (Anthropic API + web_search tool)
+ *  - Operates on live tools[] array — no separate dataset
+ *  - Per-item AI check + bulk verify (10 at a time)
+ *  - Slide-in drawer with full tool details, AI result,
+ *    audit note field (notes persisted in localStorage)
+ *  - Filter by category, status (ok/issue/pending), search
+ *  - Stat bar: items, pcs, checked, issues
+ *  - Export audit CSV (with status + AI results)
+ *  - Separate Anthropic API key (ts_claude_key) in Settings
+ *
+ *  v3.3
+ *  ─────────────────────────────────────────────────────
+ *  - Part number normalisation: Gühring "5584-12,000" now
+ *    matches "5584" — strips size suffix before comparing
+ *  - partNumbersMatch() + normPartNumber() helpers used
+ *    across all matching (adjust mode + in-stock check)
+ *  - Contacts moved from tab into Settings modal
+ *    (👥 Procurement & Suppliers button)
+ *  - Storage unit management moved into Storage tab
+ *    (chips with ✏️ edit + ✕ delete, ➕ Unit button)
+ *  - Storage layouts overhauled:
+ *    · Shelves: custom label per slot (Top Shelf, Big Tub…)
+ *    · Drawers: rows × cols grid per drawer, D1·R1·C1 addressing
+ *    · Bins: unchanged
+ *  - renderLocPicker updated for all three types
+ *  - locStr updated to show custom shelf labels + drawer coords
+ *
+ *  v3.2
+ *  ─────────────────────────────────────────────────────
+ *  - Tap any stock item or bin slot → detail view modal
+ *    (read-only, with Reorder + Edit buttons)
+ *  - Reorder sheet: supplier info block, 📧 Email Manager
+ *    button (mailto with To + CC from Settings)
+ *  - Supplier management: company, rep, email, phone
+ *  - Min/Max qty per item; low stock warning modal on
+ *    removal with OK or Request Stock options
+ *  - Procurement manager email (To + CC) in Settings
+ *  - Scan tab always resets to Add Stock after adjustment
+ *  - Supplier linked to each item via edit modal
+ *  - Supplier + min/max shown in detail view
+ *
+ *  v3.1
+ *  ─────────────────────────────────────────────────────
+ *  - AI Verify All Stock: bulk web-search pass using
+ *    gpt-4o-search-preview, auto-updates specs
+ *  - Post-scan AI verify: second lookup after label scan
+ *    corrects fields silently in background
+ *  - SECO -C suffix decoder: -C1=R0.1, -C2=R0.2 etc
+ *  - normaliseRadius(): forces R0.x format (R.4 → R0.4)
+ *  - fixCornerRadius(): brand-aware radius correction
+ *  - buildVerifyPrompt(): shared prompt for bulk + scan verify
+ *
+ *  v3.0
+ *  ─────────────────────────────────────────────────────
+ *  - Storage system: bins / shelves / drawers
+ *  - D1 R1 C1 bin addressing, A/B/C sections for bins
+ *  - Storage view with grid (bins) and list (shelves/drawers)
+ *  - Location picker in scan + edit modals
+ *  - 4-tab nav: Scan · Stock · Storage · Settings
+ *  - Category filter chips on Stock tab
+ *  - Detail modal: view item without editing
+ *  - Edit modal: full field editing incl. location
+ *  - Brand management in Settings
+ *  - CSV export + JSON backup/restore
+ *  - GitHub auto-update checker
+ *
+ *  v2.x
+ *  ─────────────────────────────────────────────────────
+ *  - OpenAI GPT-4o vision label scanning
+ *  - Adjust Stock mode with fuzzy matching
+ *  - Brand identification (ISCAR, SECO, Gühring, BIG Daishowa)
+ *  - Category detection (drill/milling/turning/tap/endmill)
+ *  - ISO corner radius decoding
+ *  - localStorage persistence
+ *  - PWA manifest + service worker
+ * ════════════════════════════════════════════════════════
+ */
 
 async function checkForUpdate() {
   const btn = document.getElementById('updateBtn');
@@ -2477,6 +2718,242 @@ function copyReorder() {
     .catch(() => showToast('Copy failed', true));
 }
 
+function resetClaudeKey(){localStorage.removeItem('ts_claude_key');showToast('Claude API key cleared');}
+
+function getClaudeKey(){
+  let k=localStorage.getItem('ts_claude_key');
+  if(!k){k=prompt('Enter your Anthropic API key for Audit tab\nGet one at console.anthropic.com → API Keys\nStored only on this device:');
+    if(k&&k.startsWith('sk-ant-'))localStorage.setItem('ts_claude_key',k.trim());else return null;}
+  return k;
+}
+
+// ── AUDIT MODULE ─────────────────────────────────────────────────────────────
+let auditStatuses = {};   // toolId → 'ok' | 'issue' | 'loading'
+let auditResults  = {};   // toolId → string
+let auditNotes    = {};   // toolId → string
+let auditDrawerId = null;
+let auditBulkRunning = false;
+
+(function initAuditPersist(){
+  try{
+    const sr=localStorage.getItem('ts_audit_statuses');if(sr)auditStatuses=JSON.parse(sr);
+    const rr=localStorage.getItem('ts_audit_results'); if(rr)auditResults=JSON.parse(rr);
+    const nr=localStorage.getItem('ts_audit_notes');   if(nr)auditNotes=JSON.parse(nr);
+  }catch(e){}
+})();
+
+function saveAuditData(){
+  try{
+    localStorage.setItem('ts_audit_statuses',JSON.stringify(auditStatuses));
+    localStorage.setItem('ts_audit_results', JSON.stringify(auditResults));
+    localStorage.setItem('ts_audit_notes',   JSON.stringify(auditNotes));
+  }catch(e){}
+}
+
+function auditBadgeHtml(id){
+  const s=auditStatuses[id];
+  if(!s)                   return '<span class="audit-badge pending">— Pending</span>';
+  if(s==='loading')        return '<span class="audit-badge loading">Checking…</span>';
+  if(s==='issue')          return '<span class="audit-badge issue">⚠ Issue</span>';
+  return                          '<span class="audit-badge ok">✓ OK</span>';
+}
+
+function renderAuditStats(){
+  const total=tools.length;
+  const qty=tools.reduce((s,t)=>s+t.qty,0);
+  const checked=Object.keys(auditStatuses).filter(id=>auditStatuses[id]&&auditStatuses[id]!=='loading').length;
+  const issues=Object.values(auditStatuses).filter(s=>s==='issue').length;
+  document.getElementById('auditStats').innerHTML=[
+    ['Items',total,''],
+    ['Total pcs',qty,''],
+    ['Checked',checked,''],
+    ['Issues',issues,issues>0?'red':''],
+  ].map(([l,v,cls])=>`<div class="audit-stat"><div class="audit-stat-label">${l}</div><div class="audit-stat-val ${cls}">${v}</div></div>`).join('');
+}
+
+function renderAudit(){
+  renderAuditStats();
+  const q=(document.getElementById('auditSearch')?.value||'').toLowerCase();
+  const cat=document.getElementById('auditCatFilter')?.value||'';
+  const status=document.getElementById('auditStatusFilter')?.value||'';
+  const filtered=tools.filter(t=>{
+    if(cat&&t.cat!==cat)return false;
+    if(q&&![t.brand,t.partNumber,t.diameter,t.grade].some(v=>(v||'').toLowerCase().includes(q)))return false;
+    const s=auditStatuses[t.id];
+    if(status==='ok'&&s!=='ok')return false;
+    if(status==='issue'&&s!=='issue')return false;
+    if(status==='pending'&&s)return false;
+    return true;
+  });
+  const el=document.getElementById('auditList');
+  if(!filtered.length){
+    el.innerHTML='<div style="text-align:center;padding:40px 16px;color:var(--muted);font-size:13px">No items match your filters.</div>';
+    return;
+  }
+  el.innerHTML=filtered.map(t=>{
+    const meta=CAT_META[t.cat]||CAT_META.other;
+    const sub=[t.brand,t.diameter,t.grade].filter(Boolean).join(' · ');
+    const s=auditStatuses[t.id];
+    const isLoading=s==='loading';
+    return`<div class="audit-row" onclick="openAuditDrawer(${t.id})">
+      <div class="cat-dot" style="background:${meta.color};flex-shrink:0"></div>
+      <div class="audit-row-left">
+        <div class="audit-row-pn">${t.partNumber||'—'}</div>
+        <div class="audit-row-sub">${sub||t.notes||'—'}</div>
+      </div>
+      <div class="audit-row-right">
+        ${auditBadgeHtml(t.id)}
+        <div style="display:flex;gap:5px;margin-top:3px" onclick="event.stopPropagation()">
+          <button class="audit-mini-btn" onclick="auditVerifySingle(${t.id})" ${isLoading?'disabled':''}>AI</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function auditVerifySingle(id){
+  const key=getClaudeKey();
+  if(!key)return;
+  const t=tools.find(x=>x.id===id);if(!t)return;
+  if(auditStatuses[id]==='loading')return;
+  auditStatuses[id]='loading';
+  renderAudit();
+  if(auditDrawerId===id)renderAuditDrawer(id);
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        system:`You are a precision cutting tool specialist. Search the manufacturer's online catalog to verify the part number, diameter, grade/coating, and product category. Be concise and factual. If everything checks out write "✓ VERIFIED:" then confirmed specs and catalog source URL. If there is a mismatch or suspect data write "⚠ ISSUE:" then describe the problem clearly. If the part cannot be found write "? NOT FOUND:" and note this. Keep response under 150 words.`,
+        messages:[{role:'user',content:`Verify this tool against the manufacturer's catalog:\nBrand: ${t.brand||'unknown'}\nPart Number: ${t.partNumber||'unknown'}\nCategory: ${(CAT_META[t.cat]||CAT_META.other).label}\nDiameter: ${t.diameter||'not recorded'}\nGrade/Coating: ${t.grade||'not recorded'}\nNotes: ${t.notes||'none'}`}]
+      })
+    });
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+    auditResults[id]=text;
+    auditStatuses[id]=(text.includes('⚠')||text.includes('NOT FOUND'))?'issue':'ok';
+  }catch(e){
+    auditResults[id]='⚠ Error: '+e.message;
+    auditStatuses[id]='issue';
+  }
+  saveAuditData();
+  renderAudit();
+  if(auditDrawerId===id)renderAuditDrawer(id);
+}
+
+async function auditVerifyBulk(){
+  if(auditBulkRunning)return;
+  const key=getClaudeKey();if(!key)return;
+  auditBulkRunning=true;
+  const btn=document.getElementById('auditBulkBtn');
+  btn.disabled=true;btn.textContent='Running…';
+  const q=(document.getElementById('auditSearch')?.value||'').toLowerCase();
+  const cat=document.getElementById('auditCatFilter')?.value||'';
+  const toCheck=tools.filter(t=>{
+    if(auditStatuses[t.id])return false; // skip already checked
+    if(cat&&t.cat!==cat)return false;
+    if(q&&![t.brand,t.partNumber,t.diameter,t.grade].some(v=>(v||'').toLowerCase().includes(q)))return false;
+    return t.brand&&t.partNumber;
+  }).slice(0,10);
+  const wrap=document.getElementById('auditProgressWrap');
+  const bar=document.getElementById('auditProgressBar');
+  const label=document.getElementById('auditProgressLabel');
+  wrap.classList.add('active');
+  for(let i=0;i<toCheck.length;i++){
+    const t=toCheck[i];
+    label.textContent=`Verifying ${i+1} of ${toCheck.length}: ${t.brand||''} ${t.partNumber||''}`;
+    bar.style.width=(((i)/toCheck.length)*100)+'%';
+    await auditVerifySingle(t.id);
+    await new Promise(r=>setTimeout(r,500));
+  }
+  bar.style.width='100%';
+  label.textContent=`Done — verified ${toCheck.length} items`;
+  setTimeout(()=>wrap.classList.remove('active'),3500);
+  btn.disabled=false;btn.textContent='▶ Verify All';
+  auditBulkRunning=false;
+}
+
+function openAuditDrawer(id){
+  auditDrawerId=id;
+  renderAuditDrawer(id);
+  document.getElementById('auditOverlay').classList.add('open');
+  document.getElementById('auditDrawer').classList.add('open');
+}
+
+function closeAuditDrawer(){
+  auditDrawerId=null;
+  document.getElementById('auditOverlay').classList.remove('open');
+  document.getElementById('auditDrawer').classList.remove('open');
+}
+
+function renderAuditDrawer(id){
+  const t=tools.find(x=>x.id===id);if(!t)return;
+  const meta=CAT_META[t.cat]||CAT_META.other;
+  const s=auditStatuses[id];
+  const aiText=auditResults[id];
+  const aiClass=s==='loading'?'loading':s==='issue'?'issue':s==='ok'?'ok':'';
+  document.getElementById('auditDrawerTitle').textContent=`${t.brand||'Unknown'} — ${meta.label}`;
+  document.getElementById('auditDrawerPn').textContent=t.partNumber||'—';
+  const ls=locStr(t)||'—';
+  const isLoading=s==='loading';
+  document.getElementById('auditDrawerBody').innerHTML=`
+    <div class="audit-field-grid">
+      <div class="audit-field"><div class="audit-field-label">Category</div><div class="audit-field-val">${meta.icon} ${meta.label}</div></div>
+      <div class="audit-field"><div class="audit-field-label">Brand</div><div class="audit-field-val">${t.brand||'—'}</div></div>
+      <div class="audit-field"><div class="audit-field-label">Part Number</div><div class="audit-field-val mono">${t.partNumber||'—'}</div></div>
+      <div class="audit-field"><div class="audit-field-label">Diameter</div><div class="audit-field-val">${t.diameter||'—'}</div></div>
+      <div class="audit-field"><div class="audit-field-label">Grade / Coating</div><div class="audit-field-val">${t.grade||'—'}</div></div>
+      <div class="audit-field"><div class="audit-field-label">Qty in stock</div><div class="audit-field-val">${t.qty}</div></div>
+      <div class="audit-field"><div class="audit-field-label">Location</div><div class="audit-field-val" style="color:var(--accent2)">${ls}</div></div>
+      <div class="audit-field"><div class="audit-field-label">Status</div><div class="audit-field-val">${auditBadgeHtml(id)}</div></div>
+    </div>
+    ${t.notes?`<div class="audit-notes-box">${t.notes}</div>`:''}
+    <div class="audit-ai-section">
+      <h3 style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px">
+        AI Catalog Check
+        <button class="audit-mini-btn" style="margin-left:auto" onclick="auditVerifySingle(${id})" ${isLoading?'disabled':''}>${aiText?'Re-check':'Run check'}</button>
+      </h3>
+      ${aiText||isLoading
+        ?`<div class="audit-ai-result ${aiClass}">${isLoading?'Searching manufacturer catalog…':aiText}</div>`
+        :`<div style="font-size:11px;color:var(--muted)">Tap "Run check" to verify this part against the manufacturer's online catalog using Claude AI.</div>`
+      }
+    </div>
+    ${aiText?`<div style="margin-top:12px">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Audit Note</div>
+      <textarea id="auditNoteArea" rows="3" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;resize:vertical;outline:none;box-sizing:border-box">${auditNotes[id]||''}</textarea>
+      <button class="audit-btn" style="margin-top:6px;width:100%" onclick="saveAuditNote(${id})">✓ Save Note</button>
+    </div>`:''}
+  `;
+}
+
+function saveAuditNote(id){
+  const t=document.getElementById('auditNoteArea');
+  if(t){auditNotes[id]=t.value;saveAuditData();showToast('Note saved');}
+}
+
+function auditExportCSV(){
+  if(!tools.length){showToast('No tools',true);return;}
+  const headers=['Category','Brand','Part Number','Diameter','Shape','Grade','Qty','Description','Notes','Coolant Through','Drill Depth','Tap Type','Material Application','AI Audit Status','AI Result','Audit Note'];
+  const rows=tools.map(t=>[
+    (CAT_META[t.cat]||CAT_META.other).label,
+    t.brand||'',t.partNumber||'',t.diameter||'',t.shape||'',t.grade||'',t.qty,
+    t.description||'',t.notes||'',t.coolantThrough||'',t.drillDepth||'',t.tapType||'',t.material||'',
+    auditStatuses[t.id]||'pending',
+    (auditResults[t.id]||'').replace(/\n/g,' '),
+    (auditNotes[t.id]||'').replace(/\n/g,' ')
+  ].map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(','));
+  const csv=[headers.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='ToolingAudit_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
 // Init
 updateCount();
 populateStorageSelect();
@@ -2495,8 +2972,11 @@ function closeImportModal(e){
 function parseCSV(text){
   const lines = text.trim().split('\n');
   if(lines.length < 2) return [];
-  // Handle quoted fields
+  // Auto-detect delimiter: tab or comma
+  const firstLine = lines[0];
+  const delimiter = firstLine.includes('\t') ? '\t' : ',';
   function parseLine(line){
+    if(delimiter==='\t') return line.split('\t').map(f=>f.replace(/^"|"$/g,'').trim());
     const fields = [];
     let cur = '', inQ = false;
     for(let i=0; i<line.length; i++){
@@ -2530,11 +3010,12 @@ function mapRow(row){
   const grade = (row['Grade']||'').trim();
   const shape = (row['Shape']||'').trim();
   const notes = (row['Notes']||'').trim();
-  const coolant = (row['Coolant Through']||row['coolant_through']||'').trim();
+  // Accept truncated Excel column names too
+  const coolant = (row['Coolant Through']||row['Coolant']||row['coolant_through']||row['coolant']||'').trim();
   const desc = (row['Description']||row['description']||'').trim();
-  const material = (row['Material Application']||row['material_application']||row['material']||'').trim();
-  const drillDepth = (row['Drill Depth']||row['drill_depth']||'').trim();
-  const tapType = (row['Tap Type']||row['tap_type']||'').trim();
+  const material = (row['Material Application']||row['Material']||row['material_application']||row['material']||'').trim();
+  const drillDepth = (row['Drill Depth']||row['DrillDepth']||row['drill_depth']||'').trim();
+  const tapType = (row['Tap Type']||row['TapType']||row['tap_type']||'').trim();
   
   // Map category names from spreadsheet to app cat keys
   const catMap = {
