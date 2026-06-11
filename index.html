@@ -1967,7 +1967,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.8';
+const APP_VERSION = '3.9';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -1975,7 +1975,15 @@ const APP_VERSION = '3.8';
  *  Single-file PWA · Entec Resources · github.com/Tommyheyns/toolstore
  * ════════════════════════════════════════════════════════
  *
- *  v3.8  (current)
+ *  v3.9  (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Audit Auto-Fix: re-verify now uses fresh tool data
+ *    after fixes are applied, not stale pre-fix values
+ *  - 300ms delay before re-verify to ensure localStorage
+ *    is fully written first
+ *  - Audit note logs corrected part number when changed
+ *
+ *  v3.8
  *  ─────────────────────────────────────────────────────
  *  - Scan: background verify now detects mismatches on
  *    already-filled fields, not just missing ones
@@ -3057,7 +3065,10 @@ async function auditAutoFix(id){
     if(fixes.notes&&fixes.notes!==t.notes){tools[toolIdx].notes=fixes.notes;fixedFields.push('Notes');}
 
     saveTools();
-    auditNotes[id]=(auditNotes[id]?auditNotes[id]+'\n':'')+'Auto-fixed: '+fixedFields.join(', ')+' on '+new Date().toLocaleDateString('en-AU');
+    // Log what was fixed using the updated tool data
+    const updatedT=tools[toolIdx];
+    auditNotes[id]=(auditNotes[id]?auditNotes[id]+'\n':'')+'Auto-fixed: '+fixedFields.join(', ')+' on '+new Date().toLocaleDateString('en-AU')+
+      (fixes.partNumber?` (PN: ${fixes.partNumber})`:'');
     saveAuditData();
     showToast(`Fixed: ${fixedFields.join(', ')||'no changes needed'}`);
 
@@ -3068,12 +3079,14 @@ async function auditAutoFix(id){
     return;
   }
 
-  // Step 3 — re-verify automatically
+  // Step 3 — re-verify automatically with fresh tool data
   auditFixing[id]=false;
   delete auditStatuses[id];
   delete auditResults[id];
   saveAuditData();
   renderAudit();
+  // Small delay to ensure localStorage is written before re-verify reads it
+  await new Promise(r=>setTimeout(r,300));
   renderAuditDrawer(id);
   await auditVerifySingle(id);
 }
