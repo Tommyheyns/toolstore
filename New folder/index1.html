@@ -1355,34 +1355,31 @@ async function analyseForAdjust(){
 // "CNMG 120408" → "CNMG120408"
 function normPartNumber(raw){
   if(!raw)return '';
-  let s=(raw+'').trim().toUpperCase().replace(/\s+/g,'');
-
-  // Gühring EDP format: 90 + 4-digit-series + 4-digit-size + 3-digit-suffix
-  // e.g. 9041120295000 = series 4112, size 29.5mm
-  // e.g. 9055841200000 = series 5584, size 12.0mm
-  const edpMatch=s.match(/^90(\d{4})(\d{4})(\d{3})$/);
+  let s=(raw+'').trim().toUpperCase();
+  s=s.replace(/\s+/g,'');
+  // Gühring full EDP numbers: 9041120295000 → extract series+size → 412229.5
+  // Format: 90 + 4-digit-series + size-in-tenths + 000
+  // e.g. 9041120295000 → series=4112, size=29.5 → "411229.5"
+  const edpMatch=s.match(/^90(\d{4})(\d{3})(\d)000$/);
   if(edpMatch){
-    const series=edpMatch[1];
-    const raw4=parseInt(edpMatch[2],10);
-    // Try /10 first (drill inserts, larger sizes)
-    // If result >80mm, try /100 (end mills, smaller sizes)
-    let size=raw4/10;
-    if(size>80) size=raw4/100;
-    if(size>0 && size<=250) return series+size.toString();
-    return series; // fallback to series only
+    const series=edpMatch[1]; // e.g. 4112
+    const sizeWhole=parseInt(edpMatch[2],10); // e.g. 029 → 29
+    const sizeDec=edpMatch[3]; // e.g. 5
+    return series+(sizeWhole+'.'+sizeDec);
   }
-
-  // Label format: 4112-29.500 or 4112-29,500 or 4112 29.5
-  const labelMatch=s.match(/^(\d{4})[- \/](\d{1,3})[,\.](\d+)$/);
-  if(labelMatch){
-    const series=labelMatch[1];
-    const size=parseFloat(labelMatch[2]+'.'+labelMatch[3]);
-    return series+size.toString();
-  }
-
-  // Generic cleanup
-  s=s.replace(/-(\d{1,3})[,\.]\d+$/,''); // strip trailing size
-  s=s.replace(/,/g,'.').replace(/\//g,'').replace(/-/g,'');
+  // Gühring-style: base-diameter e.g. 4112-29.500 or 4112-29,500
+  s=s.replace(/-(\d{1,3})[,\.](\d+)$/,(m,whole,dec)=>{
+    // normalise to series+size e.g. "411229.5" (strip trailing zeros)
+    return parseFloat(whole+'.'+dec).toString().replace('.','.');
+  });
+  // Also handle slash separator e.g. 4112/29.500
+  s=s.replace(/\/(\d{1,3})[,\.](\d+)$/,(m,whole,dec)=>parseFloat(whole+'.'+dec).toString());
+  // Normalise commas to dots
+  s=s.replace(/,/g,'.');
+  // Strip slashes anywhere
+  s=s.replace(/\//g,'');
+  // Strip dashes
+  s=s.replace(/-/g,'');
   return s;
 }
 
@@ -1994,7 +1991,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.14';
+const APP_VERSION = '3.13';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -2002,15 +1999,7 @@ const APP_VERSION = '3.14';
  *  Single-file PWA · Entec Resources · github.com/Tommyheyns/toolstore
  * ════════════════════════════════════════════════════════
  *
- *  v3.14 (current)
- *  ─────────────────────────────────────────────────────
- *  - Fixed Gühring EDP matching for all series:
- *    4112/6761 (drill inserts) and 5584/5735 (end mills)
- *    now both correctly extract series+size for comparison
- *  - Threshold logic: /10 if ≤80mm, /100 if >80mm
- *  - All tested series now match correctly
- *
- *  v3.13
+ *  v3.13 (current)
  *  ─────────────────────────────────────────────────────
  *  - Scan verify is now on-demand — result card appears
  *    instantly with a small "🔍 Verify" button
