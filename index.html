@@ -1496,11 +1496,10 @@ function confirmAdj(){
 
 // ── SUBMIT ────────────────────────────────────────────────────────────────────
 function submitTool(){
-  try {
   const brand=getBrand('fBrand','newBrandInput');
   const pn=document.getElementById('fPart').value.trim();
   if(!pn){showToast('Part number required',true);return;}
-  // Duplicate check — block if already in stock
+  // Duplicate check
   const bc=(document.getElementById('fBarcode')?.value||'').trim().toLowerCase().replace(/[\s-]/g,'');
   const pnN=pn.toLowerCase().replace(/[\s-]/g,'');
   const brN=(brand||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s-]/g,'');
@@ -1517,8 +1516,7 @@ function submitTool(){
     return true;
   });
   if(dup){
-    const ls=locStr(dup)||'No location set';
-    showToast(`Already in stock: ${dup.brand||''} ${dup.partNumber} · ${ls} · Qty ${dup.qty}`,true);
+    showToast('⚠️ Already in stock: '+( dup.brand||'')+' '+(dup.partNumber||'')+' · Qty '+(dup.qty||1),true);
     return;
   }
   // Check location not already taken
@@ -1528,7 +1526,7 @@ function submitTool(){
     if(taken){
       const su=getSU(locCheck.storageId);
       const tm=TYPE_META[su?.type]||TYPE_META.bins;
-      showToast(`${tm.slotLabel} ${locCheck.bin}${locCheck.section?' '+locCheck.section:''} already has: ${taken.partNumber}`,true);
+      showToast(tm.slotLabel+' '+locCheck.bin+(locCheck.section?' '+locCheck.section:'')+' already has: '+taken.partNumber,true);
       return;
     }
   }
@@ -1556,7 +1554,6 @@ function submitTool(){
   const ls=locStr(tool);
   showToast('✓ Added'+(ls?' · '+ls:''));
   clearScan();
-  } catch(e){ showToast('ERROR: '+e.message, true); }
 }
 
 function clearScan(){
@@ -2075,7 +2072,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.24';
+const APP_VERSION = '3.25';
 
 /*
  * ════════════════════════════════════════════════════════
