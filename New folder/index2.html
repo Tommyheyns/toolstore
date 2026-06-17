@@ -355,8 +355,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
         <div class="field"><label>Coolant Through</label><select id="fCoolant"><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
       </div>
       <div class="field"><label>Tap Type</label><input type="text" id="fTapType" placeholder="e.g. Spiral point — through holes"></div>
-      <div class="field"><label>Notes</label><input type="text" id="fNotes" placeholder="EDP, lot number…"></div>
-      <div class="field"><label>Barcode</label><input type="text" id="fBarcode" placeholder="Barcode / EAN from label"></div>
+      <div class="field"><label>Notes</label><input type="text" id="fNotes" placeholder="EDP, lot, barcode…"></div>
     </div>
     <!-- Dynamic location picker -->
     <div class="loc-section">
@@ -625,7 +624,6 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <div class="edit-field"><label>Coolant Through</label><select id="eCoolant" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none"><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
     <div class="edit-field"><label>Tap Type</label><input type="text" id="eTapType" placeholder="e.g. Spiral point — through holes"></div>
     <div class="edit-field"><label>Notes</label><input type="text" id="eNotes"></div>
-    <div class="edit-field"><label>Barcode</label><input type="text" id="eBarcode" placeholder="Barcode / EAN from label"></div>
     <button class="edit-save" onclick="saveEdit()">✓ Save Changes</button>
     <button class="edit-delete" onclick="deleteToolFromEdit()">🗑 Delete This Item</button>
     <button class="modal-close" onclick="closeEditModal()" style="margin-top:8px">Cancel</button>
@@ -1262,10 +1260,7 @@ async function analyseImage(){
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
       body:JSON.stringify({model:'gpt-4o',max_tokens:700,messages:[{role:'user',content:[
         {type:'image_url',image_url:{url:'data:'+currentImgType+';base64,'+currentImgB64,detail:'high'}},
-        {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from ISO code last 2 digits or label","extraField1":"pitch for taps / flutes for endmills","extraField2":"tap type","notes":"EDP, lot number (not barcode)","barcode":"barcode or EAN number printed on label if visible — pure digits only","qty":1,"confidence":"high or medium or low"}\n\nSet categoryConfidence=uncertain ONLY when you genuinely cannot tell if an insert is milling vs turning (e.g. CN/BN shapes that could be used in either a face mill body or a lathe tool). In all other cases set categoryConfidence=certain.\n\n=== BARCODE vs PART NUMBER ===
-If the label shows a barcode with a numeric EAN (e.g. 303617274), put it in the "barcode" field NOT the partNumber field. The partNumber should be the manufacturer catalog number (e.g. 5007, 4112-29.5). If only a barcode is visible and no catalog number, put the number in barcode and leave partNumber blank.
-
-=== PART NUMBER ACCURACY ===\nRead every character of the part number exactly as printed on the label. Do not add, remove, or change any characters. Do not insert slashes or separators that are not physically on the label. If a number reads 21877230 write 21877230 not 21877/230.\n\n=== PIPE TAPS ===\nIf the thread is BSP, BSPT, NPT, NPTF or BSPF — the diameter field must contain the thread designation exactly as written on the label (e.g. "1/8 BSPT", "1/4 BSP", "3/8 NPT"). NEVER convert pipe thread sizes to mm. The drill size printed on the label (e.g. 9.728) is the recommended drill size, NOT the tap diameter — do not use it as the diameter.\n\n=== BRAND IDENTIFICATION ===\nISCAR: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT → brand=ISCAR\nSECO: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D/TP2500/MF5 → brand=SECO\nGühring: 4112, 4115, 4229, 5516, 5525, 5537, 5735, RT100, SL-RATIOFRAESER, HGCO prefix → brand=Gühring\nBIG Daishowa: CN, BN prefix or label says BIG DAISHOWA SEIKI → brand=BIG Daishowa\n\n=== GÜHRING SPECIFIC ===\nGühring labels use German: A=diameter, Stück=pieces, SL-RATIOFRAESER=end mill\nHGCO = Gühring EDP catalogue number prefix\nPart numbers 5735, 5516, 5525, 5537, 5262 = solid carbide end mills → category=end_mill\nOn Gühring labels diameter is shown as e.g. A 12,0 — the number after A is the diameter in mm\nDIN 6527L = 4-flute solid carbide end mill\nDIN 6535 = end mill shank standard\n\n=== ISCAR SPECIFIC ===\nICP, ICM, HCP, IDI = drill inserts (go in Sumocham/Chamdrill drill body) → category=drill_insert\nSPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG = turning inserts → category=turning_insert\nGrades: IC908, IC528, IC830, IC807 = ISCAR\n\n=== SECO SPECIFIC ===\nSPGX, RPHT, RCMT, RCGX = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT = turning inserts → category=turning_insert\nSD, MDN, MEGA prefix = drills/end mills\nGrades: T400D, TP2500, TP1500, MF5 = SECO\n\n=== BIG DAISHOWA SPECIFIC ===\nCN prefix inserts (e.g. CN0906) used in face mill bodies → categoryConfidence=uncertain (could be milling or turning)\nBN prefix = ball nose inserts\nGrade ACM250F, ACM300 = BIG Daishowa\n\n=== CATEGORY RULES ===\nDRILL INSERT: ICP, ICM, HCP, IDI, Gühring 4112/4115/4229. Always have cutting diameter. Go into drill body.\nMILLING INSERT: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT, RCMT. Round/square/octagonal.\nTURNING INSERT: Lathe/boring bar inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG. Triangle/diamond/rhombic.\nTAP: ONLY if thread designation shown e.g. M6x1.0, M10x1.5, UNC, UNF, BSP, BSPT, NPT. Never confuse with end mills.\nEND MILL: Solid carbide, has flutes. Gühring 5735/5516/5525/5537, SL-RATIOFRAESER, slot drills, ball nose, corner radius mills. 2-flute slot drills = end_mill.\nOTHER: reamers, boring bars, indexable drills (not insert), anything else.\n\n=== ISO CORNER RADIUS ===\nISO code last 2 digits = corner radius x 0.1mm: 02=R0.2, 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6\nGühring end mills: read corner radius from label (R-RF1 = sharp corner/no radius)\n\nBe exact with part numbers and diameters. Use web knowledge for unknown brands.`}
+        {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from ISO code last 2 digits or label","extraField1":"pitch for taps / flutes for endmills","extraField2":"tap type","notes":"EDP, lot, barcode ref","qty":1,"confidence":"high or medium or low"}\n\nSet categoryConfidence=uncertain ONLY when you genuinely cannot tell if an insert is milling vs turning (e.g. CN/BN shapes that could be used in either a face mill body or a lathe tool). In all other cases set categoryConfidence=certain.\n\n=== PART NUMBER ACCURACY ===\nRead every character of the part number exactly as printed on the label. Do not add, remove, or change any characters. Do not insert slashes or separators that are not physically on the label. If a number reads 21877230 write 21877230 not 21877/230.\n\n=== PIPE TAPS ===\nIf the thread is BSP, BSPT, NPT, NPTF or BSPF — the diameter field must contain the thread designation exactly as written on the label (e.g. "1/8 BSPT", "1/4 BSP", "3/8 NPT"). NEVER convert pipe thread sizes to mm. The drill size printed on the label (e.g. 9.728) is the recommended drill size, NOT the tap diameter — do not use it as the diameter.\n\n=== BRAND IDENTIFICATION ===\nISCAR: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT → brand=ISCAR\nSECO: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D/TP2500/MF5 → brand=SECO\nGühring: 4112, 4115, 4229, 5516, 5525, 5537, 5735, RT100, SL-RATIOFRAESER, HGCO prefix → brand=Gühring\nBIG Daishowa: CN, BN prefix or label says BIG DAISHOWA SEIKI → brand=BIG Daishowa\n\n=== GÜHRING SPECIFIC ===\nGühring labels use German: A=diameter, Stück=pieces, SL-RATIOFRAESER=end mill\nHGCO = Gühring EDP catalogue number prefix\nPart numbers 5735, 5516, 5525, 5537, 5262 = solid carbide end mills → category=end_mill\nOn Gühring labels diameter is shown as e.g. A 12,0 — the number after A is the diameter in mm\nDIN 6527L = 4-flute solid carbide end mill\nDIN 6535 = end mill shank standard\n\n=== ISCAR SPECIFIC ===\nICP, ICM, HCP, IDI = drill inserts (go in Sumocham/Chamdrill drill body) → category=drill_insert\nSPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG = turning inserts → category=turning_insert\nGrades: IC908, IC528, IC830, IC807 = ISCAR\n\n=== SECO SPECIFIC ===\nSPGX, RPHT, RCMT, RCGX = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT = turning inserts → category=turning_insert\nSD, MDN, MEGA prefix = drills/end mills\nGrades: T400D, TP2500, TP1500, MF5 = SECO\n\n=== BIG DAISHOWA SPECIFIC ===\nCN prefix inserts (e.g. CN0906) used in face mill bodies → categoryConfidence=uncertain (could be milling or turning)\nBN prefix = ball nose inserts\nGrade ACM250F, ACM300 = BIG Daishowa\n\n=== CATEGORY RULES ===\nDRILL INSERT: ICP, ICM, HCP, IDI, Gühring 4112/4115/4229. Always have cutting diameter. Go into drill body.\nMILLING INSERT: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT, RCMT. Round/square/octagonal.\nTURNING INSERT: Lathe/boring bar inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG. Triangle/diamond/rhombic.\nTAP: ONLY if thread designation shown e.g. M6x1.0, M10x1.5, UNC, UNF, BSP, BSPT, NPT. Never confuse with end mills.\nEND MILL: Solid carbide, has flutes. Gühring 5735/5516/5525/5537, SL-RATIOFRAESER, slot drills, ball nose, corner radius mills. 2-flute slot drills = end_mill.\nOTHER: reamers, boring bars, indexable drills (not insert), anything else.\n\n=== ISO CORNER RADIUS ===\nISO code last 2 digits = corner radius x 0.1mm: 02=R0.2, 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6\nGühring end mills: read corner radius from label (R-RF1 = sharp corner/no radius)\n\nBe exact with part numbers and diameters. Use web knowledge for unknown brands.`}
       ]}]})
     });
     clearInterval(ticker);
@@ -1519,7 +1514,6 @@ function submitTool(){
     grade:document.getElementById('fGrade').value,
     qty:parseInt(document.getElementById('fQty').value)||1,
     notes:document.getElementById('fNotes').value,
-    barcode:document.getElementById('fBarcode')?.value?.trim()||'',
     description:document.getElementById('fDesc')?.value||'',
     material:document.getElementById('fMaterial')?.value||'',
     drillDepth:document.getElementById('fDrillDepth')?.value||'',
@@ -1555,7 +1549,7 @@ function renderInventory(){
   const q=(document.getElementById('searchBox').value||'').toLowerCase();
   const cat=document.getElementById('invCatFilter').value;
   const el=document.getElementById('invList');
-  let filtered=tools.filter(t=>(!cat||t.cat===cat)&&(!q||[t.brand,t.partNumber,t.barcode,t.diameter,t.grade,t.shape,t.notes].some(v=>(v||'').toLowerCase().includes(q))));
+  let filtered=tools.filter(t=>(!cat||t.cat===cat)&&(!q||[t.brand,t.partNumber,t.diameter,t.grade,t.shape,t.notes].some(v=>(v||'').toLowerCase().includes(q))));
   if(!filtered.length){el.innerHTML='<div style="text-align:center;padding:50px 0;color:var(--muted);font-size:13px;">No tools found.<br>Scan something to get started.</div>';return;}
   const grouped={};filtered.forEach(t=>{const k=t.cat||'other';if(!grouped[k])grouped[k]=[];grouped[k].push(t);});
   let html='';
@@ -1729,7 +1723,6 @@ function openEdit(id){
   document.getElementById('eMinQty').value=t.minQty||'';
   document.getElementById('eMaxQty').value=t.maxQty||'';
   document.getElementById('eNotes').value=t.notes||'';
-  document.getElementById('eBarcode').value=t.barcode||'';
   const _ed=document.getElementById('eDesc'); if(_ed) _ed.value=t.description||'';
   const _em=document.getElementById('eMaterial'); if(_em) _em.value=t.material||'';
   const _edd=document.getElementById('eDrillDepth'); if(_edd) _edd.value=t.drillDepth||'';
@@ -1767,7 +1760,6 @@ function saveEdit(){
     supplierId:parseInt(document.getElementById('eSupplier').value)||null,
     storageId:loc.storageId,bin:loc.bin,section:loc.section,
     notes:document.getElementById('eNotes').value.trim(),
-    barcode:document.getElementById('eBarcode').value.trim(),
     description:document.getElementById('eDesc')?.value.trim()||'',
     material:document.getElementById('eMaterial')?.value.trim()||'',
     drillDepth:document.getElementById('eDrillDepth')?.value.trim()||'',
@@ -1809,12 +1801,12 @@ function updateCount(){
 function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(err?' error':'');setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>t.classList.remove('show'),3200);}
 function exportCSV(){
   if(!tools.length){showToast('No tools',true);return;}
-  const h='Category,Brand,Part Number,Barcode,Diameter,Shape,Grade,Qty,Description,Notes,Coolant Through,Drill Depth,Tap Type,Material Application,Storage,Slot,Section,Added\n';
+  const h='Category,Brand,Part Number,Diameter,Shape,Grade,Qty,Description,Notes,Coolant Through,Drill Depth,Tap Type,Material Application,Storage,Slot,Section,Added\n';
   const r=tools.map(t=>{
     const su=getSU(t.storageId);
     return[
       CAT_META[t.cat]?.label||t.cat,
-      t.brand,t.partNumber,t.barcode||'',t.diameter||'',t.shape||'',t.grade||'',t.qty,
+      t.brand,t.partNumber,t.diameter||'',t.shape||'',t.grade||'',t.qty,
       t.description||'',t.notes||'',t.coolantThrough||'',t.drillDepth||'',t.tapType||'',t.material||'',
       su?.name||'',t.bin||'',t.section||'',t.addedAt||''
     ].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',');
@@ -1900,7 +1892,6 @@ function fillAIResult(p){
   document.getElementById('fGrade').value=p.grade||'';
   document.getElementById('fQty').value=p.qty||1;
   document.getElementById('fNotes').value=p.notes||'';
-  if(document.getElementById('fBarcode')) document.getElementById('fBarcode').value=p.barcode||'';
   const _fd=document.getElementById('fDesc'); if(_fd) _fd.value=p.description||'';
   const _fm=document.getElementById('fMaterial'); if(_fm) _fm.value=p.material||p.materialApplication||'';
   const _fdd=document.getElementById('fDrillDepth'); if(_fdd) _fdd.value=p.drillDepth||p.drill_depth||'';
@@ -1948,22 +1939,7 @@ function fillAIResult(p){
     const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
     const tbr=(t.brand||'').toLowerCase();
     const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
-    // Match on part number OR barcode — either is sufficient
-    const tbc=(t.barcode||'').toLowerCase().replace(/[\s-]/g,'');
-    const bcCheck=(p.barcode||'').toLowerCase().replace(/[\s-]/g,'');
-    const pnMatch=pnCheck&&tpn&&tpn===pnCheck;
-    const bcMatch=bcCheck&&tbc&&tbc===bcCheck;
-    const pnVsBc=pnCheck&&tbc&&tbc===pnCheck; // scanned PN matches stored barcode
-    const bcVsPn=bcCheck&&tpn&&tpn===bcCheck; // scanned barcode matches stored PN
-    if(!pnMatch&&!bcMatch&&!pnVsBc&&!bcVsPn) return false;
-    // Brand must loosely match
-    if(brCheck&&!tbr.includes(brCheck)&&!brCheck.includes(tbr)) return false;
-    // Diameter: skip numeric check if either side has no meaningful numeric content
-    // (e.g. pipe taps where diameter is "1/8 BSPT" — strips to "18" which is unreliable)
-    if(dmCheck&&tdm&&dmCheck.length>1&&tdm.length>1){
-      if(Math.abs(parseFloat(dmCheck)-parseFloat(tdm))>=0.2) return false;
-    }
-    return true;
+    return pnCheck&&tpn&&tpn===pnCheck&&(!brCheck||tbr.includes(brCheck)||brCheck.includes(tbr))&&(!dmCheck||!tdm||Math.abs(parseFloat(dmCheck)-parseFloat(tdm))<0.2);
   });
   if(inStockMatch){
     inStockMatchedTool=inStockMatch;
@@ -2033,30 +2009,6 @@ const APP_VERSION = '3.14';
  *    now both correctly extract series+size for comparison
  *  - Threshold logic: /10 if ≤80mm, /100 if >80mm
  *  - All tested series now match correctly
- *
- *  v3.15
- *  ─────────────────────────────────────────────────────
- *  - New Barcode field on all tools (separate from Part
- *    Number) — stores EAN/barcode from label
- *  - Scan AI now puts barcodes in barcode field, not
- *    part number field
- *  - Duplicate check matches on part number OR barcode
- *    — either hit triggers "already in stock" warning
- *  - Cross-matching: scanned PN checked against stored
- *    barcode, and vice versa (catches both orders)
- *  - Barcode included in CSV export, audit CSV, and
- *    stock search
- *  - Edit modal and scan form both show Barcode field
- *
- *  v3.14
- *  ─────────────────────────────────────────────────────
- *  - Fix: duplicate detection no longer fails for pipe
- *    taps (BSPT/BSP/NPT) — diameter numeric comparison
- *    skipped when value contains thread designation
- *    (e.g. "1/8 BSPT") which strips unreliably to digits
- *  - Part number is now the sole primary key for match;
- *    diameter is only cross-checked when both sides have
- *    clear numeric content
  *
  *  v3.13
  *  ─────────────────────────────────────────────────────
@@ -3216,7 +3168,7 @@ function saveAuditNote(id){
 
 function auditExportCSV(){
   if(!tools.length){showToast('No tools',true);return;}
-  const headers=['Category','Brand','Part Number','Barcode','Diameter','Shape','Grade','Qty','Description','Notes','Coolant Through','Drill Depth','Tap Type','Material Application','AI Audit Status','AI Result','Audit Note'];
+  const headers=['Category','Brand','Part Number','Diameter','Shape','Grade','Qty','Description','Notes','Coolant Through','Drill Depth','Tap Type','Material Application','AI Audit Status','AI Result','Audit Note'];
   const rows=tools.map(t=>[
     (CAT_META[t.cat]||CAT_META.other).label,
     t.brand||'',t.partNumber||'',t.diameter||'',t.shape||'',t.grade||'',t.qty,
