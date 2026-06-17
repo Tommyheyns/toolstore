@@ -1869,15 +1869,35 @@ function restoreFromJSON(){
     const parsed=JSON.parse(raw);
     if(!Array.isArray(parsed)){showToast('Invalid backup format',true);return;}
     if(!confirm(`Restore ${parsed.length} items? This will ADD to your current stock.`))return;
-    // Merge — avoid duplicates by id
-    const existingIds=new Set(tools.map(t=>t.id));
-    const newItems=parsed.filter(t=>!existingIds.has(t.id));
+    // Detect spreadsheet-style JSON (keys like "Part Number") vs app backup (keys like "partNumber")
+    const isSpreadsheet = parsed.length>0 && 'Part Number' in parsed[0];
+    const catMap={'Drill Inserts':'drill','Drill Holders':'drill_holder','Solid Drills':'solid_drill',
+      'End Mills':'endmill','Milling Inserts':'milling','Taps':'taps','Other':'other'};
+    const mapped = isSpreadsheet ? parsed.map(r=>({
+      id: Date.now()+Math.random(),
+      cat: catMap[r['Category']]||'other',
+      brand: (r['Brand']||'').trim(),
+      partNumber: (r['Part Number']||'').trim(),
+      barcode: (r['Barcode']||'').trim(),
+      diameter: (r['Diameter']||'').trim(),
+      shape: (r['Shape']||'').trim(),
+      grade: (r['Grade']||'').trim(),
+      qty: parseInt(r['Qty'])||1,
+      notes: (r['Notes']||'').trim(),
+      added: r['Added']||new Date().toISOString(),
+    })) : parsed;
+    // Merge — avoid duplicates by partNumber
+    const existingPNs=new Set(tools.map(t=>(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'')));
+    const newItems=mapped.filter(t=>{
+      const pn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+      return pn && !existingPNs.has(pn);
+    });
     tools=[...tools,...newItems];
     save('ts_tools',tools);
     updateCount();
     document.getElementById('restoreBox').style.display='none';
     document.getElementById('restoreInput').value='';
-    showToast(`✓ Restored ${newItems.length} items`);
+    showToast(`✓ Restored ${newItems.length} of ${mapped.length} items`+(isSpreadsheet?' (spreadsheet format)':''));
   }catch(e){showToast('Invalid JSON — check your backup',true);}
 }
 
@@ -2055,7 +2075,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.22';
+const APP_VERSION = '3.23';
 
 /*
  * ════════════════════════════════════════════════════════
