@@ -147,7 +147,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 .bc-qty{font-size:9px;color:var(--green);font-weight:600}
 
 /* MODAL */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;backdrop-filter:blur(4px);pointer-events:none}
+.modal-bg{display:flex;position:fixed;inset:0;background:rgba(255,0,0,.15);z-index:200;backdrop-filter:none;pointer-events:none}
 .modal-bg.show{pointer-events:auto}
 .modal-bg.show{display:flex;align-items:flex-end}
 .modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;padding:20px 18px 48px;border:1px solid var(--border);border-bottom:none;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1);max-height:88vh;overflow-y:auto}
@@ -1811,8 +1811,7 @@ function closeEditModal(e){if(!e||e.target===document.getElementById('editModalB
 let inStockMatchedTool=null;
 function closeAllModals(){
   ['inStockModalBg','editModalBg','detailModalBg','reorderModalBg','verifyModalBg',
-   'addStorageModalBg','catConfirmModalBg','contactsModalBg','supplierModalBg','importModalBg',
-   'modalBg','lowStockModalBg']
+   'addStorageModalBg','catConfirmModalBg','contactsModalBg','supplierModalBg','importModalBg']
   .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('show');});
   inStockMatchedTool=null;
 }
@@ -2073,7 +2072,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.26';
+const APP_VERSION = '3.25';
 
 /*
  * ════════════════════════════════════════════════════════
