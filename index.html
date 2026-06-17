@@ -1811,6 +1811,7 @@ function deleteToolFromEdit(){
 function closeEditModal(e){if(!e||e.target===document.getElementById('editModalBg'))document.getElementById('editModalBg').classList.remove('show');}
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
+let inStockMatchedTool=null;
 function closeAllModals(){
   ['inStockModalBg','editModalBg','detailModalBg','reorderModalBg','verifyModalBg',
    'addStorageModalBg','catConfirmModalBg','contactsModalBg','supplierModalBg','importModalBg']
@@ -2035,7 +2036,6 @@ function fillAIResult(p){
 }
 
 // ── IN-STOCK MODAL ────────────────────────────────────────────────────────────
-let inStockMatchedTool = null;
 
 function closeInStockModal(){
   document.getElementById('inStockModalBg').classList.remove('show');
@@ -2075,7 +2075,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.23';
+const APP_VERSION = '3.24';
 
 /*
  * ════════════════════════════════════════════════════════
