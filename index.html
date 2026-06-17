@@ -1811,7 +1811,8 @@ function closeEditModal(e){if(!e||e.target===document.getElementById('editModalB
 let inStockMatchedTool=null;
 function closeAllModals(){
   ['inStockModalBg','editModalBg','detailModalBg','reorderModalBg','verifyModalBg',
-   'addStorageModalBg','catConfirmModalBg','contactsModalBg','supplierModalBg','importModalBg']
+   'addStorageModalBg','catConfirmModalBg','contactsModalBg','supplierModalBg','importModalBg',
+   'modalBg','lowStockModalBg']
   .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('show');});
   inStockMatchedTool=null;
 }
@@ -2072,7 +2073,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.25';
+const APP_VERSION = '3.26';
 
 /*
  * ════════════════════════════════════════════════════════
