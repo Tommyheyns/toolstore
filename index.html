@@ -828,7 +828,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <script>
 // ── VERSION CACHE BUSTER ──────────────────────────────────────────────────────
 (function(){
-  const VERSION='3.17';
+  const VERSION='3.18';
   const url=new URL(window.location.href);
   if(url.searchParams.get('v')!==VERSION){
     url.searchParams.set('v',VERSION);
@@ -1975,8 +1975,12 @@ function fillAIResult(p){
     const pnVsBc=pnCheck&&tbc&&tbc===pnCheck; // scanned PN matches stored barcode
     const bcVsPn=bcCheck&&tpn&&tpn===bcCheck; // scanned barcode matches stored PN
     if(!pnMatch&&!bcMatch&&!pnVsBc&&!bcVsPn) return false;
-    // Brand must loosely match
-    if(brCheck&&!tbr.includes(brCheck)&&!brCheck.includes(tbr)) return false;
+    // Brand check: only block if BOTH sides have a brand AND they clearly don't match
+    // Normalise away umlauts so Gühring == Guhring
+    const normalBr=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s-]/g,'');
+    const brN=normalBr(brCheck);
+    const tbrN=normalBr(tbr);
+    if(brN&&tbrN&&!tbrN.includes(brN)&&!brN.includes(tbrN)) return false;
     // Diameter: skip numeric check if either side has no meaningful numeric content
     // (e.g. pipe taps where diameter is "1/8 BSPT" — strips to "18" which is unreliable)
     if(dmCheck&&tdm&&dmCheck.length>1&&tdm.length>1){
@@ -2037,7 +2041,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.17';
+const APP_VERSION = '3.18';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -2053,7 +2057,14 @@ const APP_VERSION = '3.17';
  *  - Threshold logic: /10 if ≤80mm, /100 if >80mm
  *  - All tested series now match correctly
  *
- *  v3.17 (current)
+ *  v3.18 (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Fix: brand check now normalises umlauts before
+ *    comparing — Gühring == Guhring, no false misses
+ *  - Brand check no longer blocks a part number match
+ *    when one side has no brand stored
+ *
+ *  v3.17
  *  ─────────────────────────────────────────────────────
  *  - Fix: all modals forcibly closed on tab switch
  *    prevents ghost modals intercepting taps on other tabs
