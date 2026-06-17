@@ -828,7 +828,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <script>
 // ── VERSION CACHE BUSTER ──────────────────────────────────────────────────────
 (function(){
-  const VERSION='3.16';
+  const VERSION='3.17';
   const url=new URL(window.location.href);
   if(url.searchParams.get('v')!==VERSION){
     url.searchParams.set('v',VERSION);
@@ -1797,12 +1797,19 @@ function deleteToolFromEdit(){
 function closeEditModal(e){if(!e||e.target===document.getElementById('editModalBg'))document.getElementById('editModalBg').classList.remove('show');}
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
+function closeAllModals(){
+  ['inStockModalBg','editModalBg','detailModalBg','reorderModalBg','verifyModalBg',
+   'addStorageModalBg','catConfirmModalBg','contactsModalBg','supplierModalBg','importModalBg']
+  .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('show');});
+  inStockMatchedTool=null;
+}
+
 function switchTab(tab){
   const tabNames=['scan','inventory','storage','audit','settings'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabNames[i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
-  if(tab!=='scan') closeInStockModal(); // dismiss any lingering in-stock alert when leaving scan tab
+  if(tab!=='scan') closeAllModals(); // dismiss any lingering modals when switching tabs
   if(tab==='inventory')renderInventory();
   if(tab==='storage'){populateStorageSelect();renderStorageView();renderStorageUnitChips();}
   if(tab==='settings'){renderBrandList();}
@@ -2030,7 +2037,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.16';
+const APP_VERSION = '3.17';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -2046,7 +2053,13 @@ const APP_VERSION = '3.16';
  *  - Threshold logic: /10 if ≤80mm, /100 if >80mm
  *  - All tested series now match correctly
  *
- *  v3.16 (current)
+ *  v3.17 (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Fix: all modals forcibly closed on tab switch
+ *    prevents ghost modals intercepting taps on other tabs
+ *  - closeAllModals() helper clears every modal at once
+ *
+ *  v3.16
  *  ─────────────────────────────────────────────────────
  *  - Fix: stock list tap now works — in-stock modal was
  *    intercepting touches; cleared on tab switch
