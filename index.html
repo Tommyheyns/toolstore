@@ -828,7 +828,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <script>
 // ── VERSION CACHE BUSTER ──────────────────────────────────────────────────────
 (function(){
-  const VERSION='3.18';
+  const VERSION='3.19';
   const url=new URL(window.location.href);
   if(url.searchParams.get('v')!==VERSION){
     url.searchParams.set('v',VERSION);
@@ -1508,6 +1508,27 @@ function submitTool(){
   const brand=getBrand('fBrand','newBrandInput');
   const pn=document.getElementById('fPart').value.trim();
   if(!pn){showToast('Part number required',true);return;}
+  // Duplicate check — block if already in stock
+  const bc=(document.getElementById('fBarcode')?.value||'').trim().toLowerCase().replace(/[\s-]/g,'');
+  const pnN=pn.toLowerCase().replace(/[\s-]/g,'');
+  const brN=(brand||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s-]/g,'');
+  const dup=tools.find(t=>{
+    const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
+    const tbc=(t.barcode||'').toLowerCase().replace(/[\s-]/g,'');
+    const tbrN=(t.brand||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s-]/g,'');
+    const pnMatch=pnN&&tpn&&tpn===pnN;
+    const bcMatch=bc&&tbc&&tbc===bc;
+    const pnVsBc=pnN&&tbc&&tbc===pnN;
+    const bcVsPn=bc&&tpn&&tpn===bc;
+    if(!pnMatch&&!bcMatch&&!pnVsBc&&!bcVsPn) return false;
+    if(brN&&tbrN&&!tbrN.includes(brN)&&!brN.includes(tbrN)) return false;
+    return true;
+  });
+  if(dup){
+    const ls=locStr(dup)||'No location set';
+    showToast(`Already in stock: ${dup.brand||''} ${dup.partNumber} · ${ls} · Qty ${dup.qty}`,true);
+    return;
+  }
   // Check location not already taken
   const locCheck=getLocValues('locRow');
   if(locCheck.storageId&&locCheck.bin){
@@ -2041,7 +2062,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.18';
+const APP_VERSION = '3.19';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -2057,7 +2078,14 @@ const APP_VERSION = '3.18';
  *  - Threshold logic: /10 if ≤80mm, /100 if >80mm
  *  - All tested series now match correctly
  *
- *  v3.18 (current)
+ *  v3.19 (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Duplicate check now also runs inside submitTool
+ *    before saving — shows toast and blocks add if match
+ *  - Catches cases where in-stock modal was invisible
+ *    or dismissed before user tapped Add to Stock
+ *
+ *  v3.18
  *  ─────────────────────────────────────────────────────
  *  - Fix: brand check now normalises umlauts before
  *    comparing — Gühring == Guhring, no false misses
