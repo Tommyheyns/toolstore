@@ -828,7 +828,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <script>
 // ── VERSION CACHE BUSTER ──────────────────────────────────────────────────────
 (function(){
-  const VERSION='3.19';
+  const VERSION='3.19d';
   const url=new URL(window.location.href);
   if(url.searchParams.get('v')!==VERSION){
     url.searchParams.set('v',VERSION);
@@ -1507,6 +1507,7 @@ function confirmAdj(){
 function submitTool(){
   const brand=getBrand('fBrand','newBrandInput');
   const pn=document.getElementById('fPart').value.trim();
+  showToast('DEBUG: submitTool called, pn='+pn);
   if(!pn){showToast('Part number required',true);return;}
   // Duplicate check — block if already in stock
   const bc=(document.getElementById('fBarcode')?.value||'').trim().toLowerCase().replace(/[\s-]/g,'');
@@ -2062,7 +2063,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.19';
+const APP_VERSION = '3.19d';
 
 /*
  * ════════════════════════════════════════════════════════
