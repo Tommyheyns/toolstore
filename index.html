@@ -147,7 +147,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 .bc-qty{font-size:9px;color:var(--green);font-weight:600}
 
 /* MODAL */
-.modal-bg{display:flex;position:fixed;inset:0;background:rgba(255,0,0,.15);z-index:200;backdrop-filter:none;pointer-events:none}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;backdrop-filter:blur(4px);pointer-events:none}
 .modal-bg.show{pointer-events:auto}
 .modal-bg.show{display:flex;align-items:flex-end}
 .modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;padding:20px 18px 48px;border:1px solid var(--border);border-bottom:none;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1);max-height:88vh;overflow-y:auto}
@@ -493,6 +493,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <div class="settings-section">
     <div class="settings-title">Data Tools</div>
     <button class="settings-btn" onclick="fixGuhringEncoding()"><span class="settings-icon">🔧</span> Fix Gühring Encoding</button>
+  </div>
   <div class="settings-section">
     <div class="settings-title">Custom Brands</div>
     <div id="brandList"></div>
