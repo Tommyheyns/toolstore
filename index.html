@@ -828,7 +828,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
 <script>
 // ── VERSION CACHE BUSTER ──────────────────────────────────────────────────────
 (function(){
-  const VERSION='3.15';
+  const VERSION='3.16';
   const url=new URL(window.location.href);
   if(url.searchParams.get('v')!==VERSION){
     url.searchParams.set('v',VERSION);
@@ -1802,6 +1802,7 @@ function switchTab(tab){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabNames[i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
+  if(tab!=='scan') closeInStockModal(); // dismiss any lingering in-stock alert when leaving scan tab
   if(tab==='inventory')renderInventory();
   if(tab==='storage'){populateStorageSelect();renderStorageView();renderStorageUnitChips();}
   if(tab==='settings'){renderBrandList();}
@@ -1954,13 +1955,14 @@ function fillAIResult(p){
   const pnCheck=(p.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
   const brCheck=(p.brand||'').toLowerCase();
   const dmCheck=(p.diameter||'').replace(/[^\d.]/g,'');
+  const scanBarcode=(p.barcode||'').toLowerCase().replace(/[\s-]/g,'');
   const inStockMatch=tools.find(t=>{
     const tpn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
     const tbr=(t.brand||'').toLowerCase();
     const tdm=(t.diameter||'').replace(/[^\d.]/g,'');
     // Match on part number OR barcode — either is sufficient
     const tbc=(t.barcode||'').toLowerCase().replace(/[\s-]/g,'');
-    const bcCheck=(p.barcode||'').toLowerCase().replace(/[\s-]/g,'');
+    const bcCheck=scanBarcode;
     const pnMatch=pnCheck&&tpn&&tpn===pnCheck;
     const bcMatch=bcCheck&&tbc&&tbc===bcCheck;
     const pnVsBc=pnCheck&&tbc&&tbc===pnCheck; // scanned PN matches stored barcode
@@ -2028,7 +2030,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.15';
+const APP_VERSION = '3.16';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -2044,7 +2046,15 @@ const APP_VERSION = '3.15';
  *  - Threshold logic: /10 if ≤80mm, /100 if >80mm
  *  - All tested series now match correctly
  *
- *  v3.15 (current)
+ *  v3.16 (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Fix: stock list tap now works — in-stock modal was
+ *    intercepting touches; cleared on tab switch
+ *  - Barcode shown in detail view
+ *  - scanBarcode extracted once outside find() loop
+ *    for safety
+ *
+ *  v3.15
  *  ─────────────────────────────────────────────────────
  *  - New Barcode field on all tools (separate from Part
  *    Number) — stores EAN/barcode from label
@@ -2682,6 +2692,7 @@ function openDetail(id) {
       ${row('Shape', t.shape)}
       ${row('Corner Radius', t.cornerRadius)}
       ${row('Grade / Coating', t.grade)}
+      ${row('Barcode', t.barcode)}
       ${row('Notes', t.notes)}
       ${sup ? row('Supplier', sup.company + (sup.rep ? ' · '+sup.rep : '')) : ''}
       ${sup?.email ? row('Rep Email', `<a href="mailto:${sup.email}" style="color:var(--accent2)">${sup.email}</a>`) : ''}
