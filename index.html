@@ -2090,7 +2090,17 @@ const APP_VERSION = '3.25';
  *  - Threshold logic: /10 if ≤80mm, /100 if >80mm
  *  - All tested series now match correctly
  *
- *  v3.21 (current)
+ *  v3.22 (current)
+ *  ─────────────────────────────────────────────────────
+ *  - Tool detail modal: material suitability chips now
+ *    shown for all known Gühring/ISCAR series — colour
+ *    coded P/M/K/N/S/H blocks, filled = optimal, outline
+ *    = secondary, grey = not recommended
+ *  - Detail modal: added Description, Material, Coolant
+ *    Through, Drill Depth, Tap Type, Thread Type and
+ *    Tolerance rows (previously hidden fields now visible)
+ *
+ *  v3.21
  *  ─────────────────────────────────────────────────────
  *  - End mill scan prompt: added endMillType field to
  *    distinguish square/corner-radius/ball-nose without
@@ -2759,6 +2769,86 @@ function openDetail(id) {
     </div>`;
   }
 
+  // ── Material suitability lookup (from verified Gühring catalogues) ────────────
+  const MAT_SUITABILITY = {
+    // Drills - HT 800 WP heads
+    '4112':{'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '4115':{'P':'○','M':'●','K':'','N':'','S':'','H':''},
+    '4229':{'P':'●','M':'○','K':'','N':'','S':'','H':''},
+    // RT100 VA solid drills
+    '5511':{'P':'●','M':'○','K':'●','N':'','S':'','H':'○'},
+    '5512':{'P':'●','M':'○','K':'●','N':'','S':'','H':'○'},
+    '5514':{'P':'●','M':'○','K':'●','N':'','S':'','H':'○'},
+    '5515':{'P':'●','M':'○','K':'●','N':'','S':'','H':'○'},
+    '5537':{'P':'●','M':'●','K':'●','N':'●','S':'','H':''},
+    '6537':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '6408':{'P':'●','M':'●','K':'●','N':'○','S':'','H':''},
+    // Taps
+    '4218':{'P':'●','M':'●','K':'○','N':'○','S':'○','H':''},
+    '393': {'P':'●','M':'●','K':'○','N':'○','S':'○','H':''},
+    '5733':{'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '5734':{'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '5717':{'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '5718':{'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '827': {'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '834': {'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '5725':{'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '5726':{'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '881': {'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '911': {'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '973': {'P':'●','M':'','K':'','N':'','S':'','H':''},
+    '3993':{'P':'○','M':'●','K':'','N':'','S':'●','H':''},
+    '1981':{'P':'○','M':'●','K':'','N':'','S':'●','H':''},
+    '4643':{'P':'●','M':'●','K':'','N':'','S':'','H':''},
+    // ISCAR Sumocham
+    'ICM': {'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    'ICP': {'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    'HCP': {'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    'SCD': {'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+  };
+  const MAT_LABELS = {P:'Steel',M:'Stainless',K:'Cast Iron',N:'Aluminium',S:'Ni/Ti Alloys',H:'Hardened'};
+  const MAT_COLORS = {P:'#4a90d9',M:'#e8c04a',K:'#7a7a7a',N:'#5bc0be',S:'#9b59b6',H:'#e74c3c'};
+
+  function getSuitability(tool) {
+    const pn = (tool.partNumber||'').trim();
+    // Try series prefix match longest first
+    const keys = Object.keys(MAT_SUITABILITY).sort((a,b)=>b.length-a.length);
+    for (const k of keys) {
+      if (pn.startsWith(k) || pn.startsWith('0'+k)) return MAT_SUITABILITY[k];
+    }
+    // Try brand + category fallback
+    if (tool.brand==='ISCAR') {
+      for (const k of ['ICM','ICP','HCP','SCD']) {
+        if (pn.startsWith(k)) return MAT_SUITABILITY[k];
+      }
+    }
+    return null;
+  }
+
+  function matSuitabilityHTML(tool) {
+    const s = getSuitability(tool);
+    if (!s) return '';
+    const chips = Object.entries(MAT_LABELS).map(([code, label]) => {
+      const rating = s[code];
+      if (!rating) return '';
+      const isOptimal = rating === '●';
+      const bg = isOptimal ? MAT_COLORS[code] : 'var(--surface)';
+      const border = MAT_COLORS[code];
+      const textCol = isOptimal ? '#fff' : MAT_COLORS[code];
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px;border-radius:10px;background:${bg};border:1.5px solid ${border};min-width:48px">
+        <div style="font-size:9px;font-weight:800;color:${textCol};letter-spacing:.05em;text-transform:uppercase">${code}</div>
+        <div style="font-size:9px;color:${textCol};text-align:center;line-height:1.2">${label}</div>
+        <div style="font-size:11px;color:${textCol}">${isOptimal?'●':'○'}</div>
+      </div>`;
+    }).filter(Boolean).join('');
+    if (!chips) return '';
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px">Material Suitability</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${chips}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:6px">● Optimal &nbsp; ○ Secondary</div>
+    </div>`;
+  }
+
   const html = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
       <div style="width:10px;height:10px;border-radius:50%;background:${meta.color};flex-shrink:0"></div>
@@ -2767,15 +2857,23 @@ function openDetail(id) {
     </div>
     <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:2px">${t.partNumber||'—'}</div>
     <div style="font-size:14px;color:var(--muted);margin-bottom:16px">${t.brand||'Unknown brand'}</div>
+    ${matSuitabilityHTML(t)}
     <div style="background:var(--bg);border-radius:12px;padding:0 12px;margin-bottom:14px">
       ${row('Quantity', `<span style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:${stockColor}">${t.qty}</span> <span style="font-size:11px;color:var(--muted)">pcs${t.minQty&&t.qty<=t.minQty?' ⚠️ LOW':''}</span>`)}
       ${t.minQty ? row('Min / Max', `${t.minQty} pcs${t.maxQty?' · max '+t.maxQty+' pcs':''}`, 'var(--muted)') : ''}
       ${row('Location', ls || '—', 'var(--accent2)')}
       ${row('Size / Ø', t.diameter)}
+      ${row('Description', t.description)}
       ${row('Shape', t.shape)}
       ${row('Corner Radius', t.cornerRadius)}
+      ${row('Material', t.material)}
       ${row('Grade / Coating', t.grade)}
-      ${row('Barcode', t.barcode)}
+      ${row('Coolant Through', t.coolantThrough)}
+      ${row('Drill Depth', t.drillDepth)}
+      ${row('Tap Type', t.tapType)}
+      ${row('Thread Type', t.threadType)}
+      ${row('Tolerance', t.tolerance)}
+      ${row('Barcode / EDP', t.barcode)}
       ${row('Notes', t.notes)}
       ${sup ? row('Supplier', sup.company + (sup.rep ? ' · '+sup.rep : '')) : ''}
       ${sup?.email ? row('Rep Email', `<a href="mailto:${sup.email}" style="color:var(--accent2)">${sup.email}</a>`) : ''}
