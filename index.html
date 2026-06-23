@@ -421,9 +421,21 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
   <div class="storage-header" style="display:flex;gap:8px;align-items:center">
     <select class="storage-select" id="storageUnitSelect" onchange="renderStorageView()" style="flex:1"></select>
     <button onclick="openAddStorageModal()" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700">➕ Unit</button>
+    <button onclick="openManageStorageSheet()" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700">✏️ Manage</button>
   </div>
-  <div id="storageUnitChips" style="margin-bottom:8px"></div>
   <div id="storageView"></div>
+</div>
+
+<!-- ══ MANAGE STORAGE SHEET ══ -->
+<div id="manageStorageBg" class="modal-bg" style="display:none" onclick="if(event.target===this)closeManageStorageSheet()">
+  <div class="modal-card" style="max-height:80vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800">Manage Storage Units</div>
+      <button onclick="closeManageStorageSheet()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px">✕</button>
+    </div>
+    <div id="manageStorageList"></div>
+    <button onclick="closeManageStorageSheet();openAddStorageModal()" style="width:100%;margin-top:12px;padding:14px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">➕ Add New Unit</button>
+  </div>
 </div>
 
 <!-- ══ AUDIT ══ -->
@@ -1125,7 +1137,7 @@ function deleteStorageUnit(id){
   if(!confirm('Delete this storage unit? Tools assigned here will lose their location.'))return;
   storageUnits=storageUnits.filter(s=>s.id!==id);
   save('ts_storage',storageUnits);
-  renderStorageUnitChips();
+  renderManageStorageList();
   populateStorageSelect();
   showToast('Deleted');
 }
@@ -1133,19 +1145,39 @@ function deleteStorageUnit(id){
 function closeAddStorageModal(e){if(!e||e.target===document.getElementById('addStorageModalBg'))document.getElementById('addStorageModalBg').classList.remove('show');}
 
 function renderStorageUnitChips(){
-  const el=document.getElementById('storageUnitChips');if(!el)return;
-  if(!storageUnits.length){el.innerHTML='';return;}
+  // Legacy — no longer used (chips replaced by Manage sheet)
+}
+
+function openManageStorageSheet(){
+  renderManageStorageList();
+  const bg=document.getElementById('manageStorageBg');
+  bg.style.display='flex';
+  requestAnimationFrame(()=>bg.style.opacity='1');
+}
+
+function closeManageStorageSheet(){
+  const bg=document.getElementById('manageStorageBg');
+  bg.style.display='none';
+}
+
+function renderManageStorageList(){
+  const el=document.getElementById('manageStorageList');
+  if(!el)return;
+  if(!storageUnits.length){
+    el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">No storage units yet.<br>Tap Add New Unit to create one.</div>';
+    return;
+  }
   el.innerHTML=storageUnits.map(su=>{
     const tm=TYPE_META[su.type]||TYPE_META.bins;
     const toolCount=tools.filter(t=>t.storageId===su.id).length;
-    return`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:7px 10px;display:flex;align-items:center;gap:7px">
-      <span style="font-size:15px">${tm.icon}</span>
-      <div>
-        <div style="font-size:11px;font-weight:700">${su.name}</div>
-        <div style="font-size:9px;color:var(--muted)">${toolCount} item${toolCount!==1?'s':''}</div>
+    return`<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="font-size:22px">${tm.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${su.name}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:1px">${su.count} bins · ${toolCount} tool${toolCount!==1?'s':''}</div>
       </div>
-      <button onclick="openAddStorageModal('${su.id}')" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:10px;color:var(--muted);cursor:pointer;margin-left:2px">✏️</button>
-      <button onclick="deleteStorageUnit('${su.id}')" style="flex-shrink:0;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:3px 7px;font-size:10px;color:var(--warn);cursor:pointer">✕</button>
+      <button onclick="closeManageStorageSheet();openAddStorageModal('${su.id}')" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--text);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700">✏️ Edit</button>
+      <button onclick="deleteStorageUnit('${su.id}')" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--warn);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700">🗑 Delete</button>
     </div>`;
   }).join('');
 }
@@ -2078,7 +2110,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.28';
+const APP_VERSION = '3.30';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -3389,7 +3421,18 @@ function renderAuditDrawer(id){
     <div style="margin-top:12px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 13px">
       <div style="font-size:10px;color:var(--warn);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;font-weight:700">⚠ Issues detected</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">AI will correct the fields, save the tool, then re-verify automatically.</div>
-      <button class="audit-btn primary" style="width:100%" onclick="auditAutoFix(${id})" ${isFixing?'disabled':''}>🔧 Auto-Fix &amp; Re-verify</button>
+      <button class="audit-btn primary" style="width:100%;margin-bottom:8px" onclick="auditAutoFix(${id})" ${isFixing?'disabled':''}>🔧 Auto-Fix &amp; Re-verify</button>
+      <button class="audit-btn" style="width:100%;background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);color:var(--accent2)" onclick="auditScanAgain(${id})">📷 Scan Again</button>
+      <div style="font-size:10px;color:var(--muted);margin-top:7px;line-height:1.4">Take a fresh photo of the tool label — AI may pick up more detail to fix the issue.</div>
+    </div>`:''}
+    ${s==='ok'&&aiText&&!isFixing?`
+    <div style="margin-top:12px">
+      <button class="audit-btn" style="width:100%;background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);color:var(--accent2)" onclick="auditScanAgain(${id})">📷 Scan Again</button>
+      <div style="font-size:10px;color:var(--muted);margin-top:7px;line-height:1.4">Scan the physical tool to update or add missing info.</div>
+    </div>`:''}
+    ${s!=='issue'&&s!=='ok'&&!isFixing?`
+    <div style="margin-top:12px">
+      <button class="audit-btn" style="width:100%;background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);color:var(--accent2)" onclick="auditScanAgain(${id})">📷 Scan Again</button>
     </div>`:''}
     ${s==='issue'&&isFixing?`
     <div style="margin-top:12px;text-align:center;padding:14px;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace">
@@ -3404,6 +3447,18 @@ function renderAuditDrawer(id){
 }
 
 let auditFixing = {};
+
+function auditScanAgain(id){
+  const t=tools.find(x=>x.id===id);if(!t)return;
+  // Switch to Scan tab in Adjust mode — scan result will update this tool
+  currentAdjustId=id;
+  setMode('adjust');
+  showPage('scan');
+  // Pre-fill the adjust search with the part number so it finds the tool
+  const adjBox=document.getElementById('adjSearchBox');
+  if(adjBox){adjBox.value=t.partNumber||'';findAndShowMatches(t);}
+  showToast(`📷 Scan the label for ${t.partNumber||'this tool'}`);
+}
 
 async function auditAutoFix(id){
   const key=getApiKey();if(!key)return;
