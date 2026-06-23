@@ -407,6 +407,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
       <option value="drill">🔵 Drill</option>
       <option value="milling">🟡 Mill</option>
       <option value="turning">🟠 Turn</option>
+      <option value="threading">🔵 Thread</option>
       <option value="taps">🟢 Taps</option>
       <option value="endmill">🔴 EM</option>
       <option value="other">⚪ Other</option>
@@ -421,7 +422,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <select class="storage-select" id="storageUnitSelect" onchange="renderStorageView()" style="flex:1"></select>
     <button onclick="openAddStorageModal()" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700">➕ Unit</button>
   </div>
-  <div id="storageUnitChips" style="margin-bottom:8px"></div>
+  <div id="storageUnitListInline" style="margin-bottom:8px"></div>
   <div id="storageView"></div>
 </div>
 
@@ -435,6 +436,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
       <option value="drill">🔵 Drill</option>
       <option value="milling">🟡 Milling</option>
       <option value="turning">🟠 Turning</option>
+      <option value="threading">🔵 Threading</option>
       <option value="taps">🟢 Taps</option>
       <option value="endmill">🔴 End Mills</option>
       <option value="solid_drill">🟣 Solid Drill</option>
@@ -644,6 +646,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <div style="display:flex;gap:10px;margin-bottom:10px">
       <button onclick="confirmCategory('milling')" style="flex:1;padding:14px;border-radius:var(--radius);background:#eab30822;border:2px solid #eab308;color:#eab308;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🟡 Milling Insert</button>
       <button onclick="confirmCategory('turning')" style="flex:1;padding:14px;border-radius:var(--radius);background:#f9731622;border:2px solid #f97316;color:#f97316;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🟠 Turning Insert</button>
+      <button onclick="confirmCategory('threading')" style="flex:1;padding:14px;border-radius:var(--radius);background:#3b82f622;border:2px solid #3b82f6;color:#3b82f6;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🔵 Threading Insert</button>
     </div>
     <button onclick="confirmCategory(currentCat)" style="width:100%;padding:12px;border-radius:var(--radius);background:var(--surface);color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;border:1px solid var(--border);cursor:pointer">Keep AI suggestion and continue</button>
   </div>
@@ -833,6 +836,7 @@ const CAT_META={
   drill:  {icon:'🔵',label:'Drill Inserts',  color:'#3b82f6'},
   milling:{icon:'🟡',label:'Milling Inserts', color:'#eab308'},
   turning:{icon:'🟠',label:'Turning Inserts', color:'#f97316'},
+  threading:{icon:'🔵',label:'Threading Inserts', color:'#3b82f6'},
   taps:   {icon:'🟢',label:'Taps',            color:'#22c55e'},
   endmill:{icon:'🔴',label:'End Mills',       color:'#ef4444'},
   solid_drill:{icon:'🟣',label:'Solid Drills',color:'#a855f7'},
@@ -1238,7 +1242,7 @@ async function doManualSearch(){
     if(partNum&&!p.partNumber) p.partNumber=partNum;
     if(size&&!p.tapThread&&!p.diameter) p.diameter=size;
     if(brand&&!p.brand) p.brand=brand;
-    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',solid_drill:'solid_drill',drill_holder:'drill_holder',other:'other'};
+    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',threading_insert:'threading',tap:'taps',end_mill:'endmill',solid_drill:'solid_drill',drill_holder:'drill_holder',other:'other'};
     currentCat=catMap[p.category]||catMap[toolType]||'other';
     renderCatTags();renderCatFields();
     document.getElementById('thinking').classList.remove('show');
@@ -1267,7 +1271,7 @@ async function analyseImage(){
         {type:'text',text:`Read this cutting tool label carefully. If brand is not visible, identify it from the part number using the reference below.\n\nReturn ONLY raw JSON, no markdown:\n{"category":"drill_insert or milling_insert or turning_insert or tap or end_mill or other","categoryConfidence":"certain or uncertain","brand":"","partNumber":"","diameter":"","shape":"","grade":"","cornerRadius":"corner radius e.g. R0.4 or R0.8 — read from label or ISO code last 2 digits. Leave blank if square end","endMillType":"REQUIRED for end_mill: square = flat end no radius | corner-radius = small corner rad | ball-nose = hemispherical tip. Determine from label geometry or part number suffix","flutes":"number of flutes as integer e.g. 2 or 4 — for end mills only. Read from label","oal":"overall length in mm for end mills e.g. 75 — read from label if shown","extraField1":"pitch for TAPS ONLY e.g. 1.5 — leave blank for endmills drills and inserts","extraField2":"tap type e.g. spiral flute — taps only","notes":"EDP, lot number (not barcode)","barcode":"barcode or EAN number printed on label if visible — pure digits only","qty":1,"confidence":"high or medium or low"}\n\nSet categoryConfidence=uncertain ONLY when you genuinely cannot tell if an insert is milling vs turning (e.g. CN/BN shapes that could be used in either a face mill body or a lathe tool). In all other cases set categoryConfidence=certain.\n\n=== BARCODE vs PART NUMBER ===
 If the label shows a barcode with a numeric EAN (e.g. 303617274), put it in the "barcode" field NOT the partNumber field. The partNumber should be the manufacturer catalog number (e.g. 5007, 4112-29.5). If only a barcode is visible and no catalog number, put the number in barcode and leave partNumber blank.
 
-=== PART NUMBER ACCURACY ===\nRead every character of the part number exactly as printed on the label. Do not add, remove, or change any characters. Do not insert slashes or separators that are not physically on the label. If a number reads 21877230 write 21877230 not 21877/230.\n\n=== PIPE TAPS ===\nIf the thread is BSP, BSPT, NPT, NPTF or BSPF — the diameter field must contain the thread designation exactly as written on the label (e.g. "1/8 BSPT", "1/4 BSP", "3/8 NPT"). NEVER convert pipe thread sizes to mm. The drill size printed on the label (e.g. 9.728) is the recommended drill size, NOT the tap diameter — do not use it as the diameter.\n\n=== BRAND IDENTIFICATION ===\nISCAR: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT → brand=ISCAR\nSECO: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D/TP2500/MF5 → brand=SECO\nGühring: 4112, 4115, 4229, 5516, 5525, 5537, 5735, RT100, SL-RATIOFRAESER, HGCO prefix → brand=Gühring\nBIG Daishowa: CN, BN prefix or label says BIG DAISHOWA SEIKI → brand=BIG Daishowa\n\n=== GÜHRING SPECIFIC ===\nGühring labels use German: A=diameter, Stück=pieces, SL-RATIOFRAESER=end mill\nHGCO = Gühring EDP catalogue number prefix\nPart numbers 5735, 5516, 5525, 5537, 5262, 3560, 5511, 5512, 5514, 5515 = solid carbide end mills → category=end_mill\nPart numbers 5511, 5512, 5514, 5515 = RT100 VA solid carbide coolant-through DRILLS → category=other (solid drill, NOT end_mill)\nOn Gühring labels diameter is shown as e.g. A 12,0 — the number after A is the diameter in mm\nDIN 6527L = 4-flute solid carbide end mill → endMillType=square\nDIN 6535 = end mill shank standard\nR-RF1 suffix = sharp corner / square end → endMillType=square, cornerRadius=blank\nR-RF suffix with radius e.g. R-RF08 = corner radius → endMillType=corner-radius\nDBK prefix (DHF brand) = ball nose end mill → endMillType=ball-nose\nDBO prefix (DHF brand) = ball nose end mill → endMillType=ball-nose\n\n=== ISCAR SPECIFIC ===\nICP, ICM, HCP, IDI = drill inserts (go in Sumocham/Chamdrill drill body) → category=drill_insert\nSPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG = turning inserts → category=turning_insert\nGrades: IC908, IC528, IC830, IC807 = ISCAR\n\n=== SECO SPECIFIC ===\nSPGX, RPHT, RCMT, RCGX = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT = turning inserts → category=turning_insert\nSD, MDN, MEGA prefix = drills/end mills\nGrades: T400D, TP2500, TP1500, MF5 = SECO\n\n=== BIG DAISHOWA SPECIFIC ===\nCN prefix inserts (e.g. CN0906) used in face mill bodies → categoryConfidence=uncertain (could be milling or turning)\nBN prefix = ball nose inserts\nGrade ACM250F, ACM300 = BIG Daishowa\n\n=== CATEGORY RULES ===\nDRILL INSERT: ICP, ICM, HCP, IDI, Gühring 4112/4115/4229. Always have cutting diameter. Go into drill body.\nMILLING INSERT: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT, RCMT. Round/square/octagonal.\nTURNING INSERT: Lathe/boring bar inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG. Triangle/diamond/rhombic.\nTAP: ONLY if thread designation shown e.g. M6x1.0, M10x1.5, UNC, UNF, BSP, BSPT, NPT. Never confuse with end mills.\nEND MILL: Solid carbide, has flutes. Gühring 5735/5516/5525/5537/3560, SL-RATIOFRAESER, slot drills, ball nose, corner radius mills. 2-flute slot drills = end_mill. ALWAYS set endMillType: flat end = square | small corner rad = corner-radius | hemispherical tip = ball-nose. DHF DBK/DBO = ball-nose.\nOTHER: reamers, boring bars, indexable drills (not insert), anything else.\n\n=== ISO CORNER RADIUS ===\nISO code last 2 digits = corner radius x 0.1mm: 02=R0.2, 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6\nGühring end mills: read corner radius from label (R-RF1 = sharp corner/no radius)\n\nBe exact with part numbers and diameters. Use web knowledge for unknown brands.`}
+=== PART NUMBER ACCURACY ===\nRead every character of the part number exactly as printed on the label. Do not add, remove, or change any characters. Do not insert slashes or separators that are not physically on the label. If a number reads 21877230 write 21877230 not 21877/230.\n\n=== PIPE TAPS ===\nIf the thread is BSP, BSPT, NPT, NPTF or BSPF — the diameter field must contain the thread designation exactly as written on the label (e.g. "1/8 BSPT", "1/4 BSP", "3/8 NPT"). NEVER convert pipe thread sizes to mm. The drill size printed on the label (e.g. 9.728) is the recommended drill size, NOT the tap diameter — do not use it as the diameter.\n\n=== BRAND IDENTIFICATION ===\nISCAR: ICP, ICM, HCP, IDI, SPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT → brand=ISCAR\nSECO: SPGX, RPHT, RCMT, RCGX, SD, MDN, MEGA, CP, CPD — grades T400D/TP2500/MF5 → brand=SECO\nGühring: 4112, 4115, 4229, 5516, 5525, 5537, 5735, RT100, SL-RATIOFRAESER, HGCO prefix → brand=Gühring\nBIG Daishowa: CN, BN prefix or label says BIG DAISHOWA SEIKI → brand=BIG Daishowa\n\n=== GÜHRING SPECIFIC ===\nGühring labels use German: A=diameter, Stück=pieces, SL-RATIOFRAESER=end mill\nHGCO = Gühring EDP catalogue number prefix\nPart numbers 5735, 5516, 5525, 5537, 5262, 3560, 5511, 5512, 5514, 5515 = solid carbide end mills → category=end_mill\nPart numbers 5511, 5512, 5514, 5515 = RT100 VA solid carbide coolant-through DRILLS → category=other (solid drill, NOT end_mill)\nOn Gühring labels diameter is shown as e.g. A 12,0 — the number after A is the diameter in mm\nDIN 6527L = 4-flute solid carbide end mill → endMillType=square\nDIN 6535 = end mill shank standard\nR-RF1 suffix = sharp corner / square end → endMillType=square, cornerRadius=blank\nR-RF suffix with radius e.g. R-RF08 = corner radius → endMillType=corner-radius\nDBK prefix (DHF brand) = ball nose end mill → endMillType=ball-nose\nDBO prefix (DHF brand) = ball nose end mill → endMillType=ball-nose\n\n=== ISCAR SPECIFIC ===\nICP, ICM, HCP, IDI = drill inserts (go in Sumocham/Chamdrill drill body) → category=drill_insert\nSPGX, APKT, SEHT, OFMT, XOEX, LNMX, RDMT = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG = turning inserts → category=turning_insert\nMT, MultiMT, Tang-Grip, DT, TT = threading inserts → category=threading_insert\nGrades: IC908, IC528, IC830, IC807, IC5005, IC9150 = ISCAR\n\n=== SECO SPECIFIC ===\nSPGX, RPHT, RCMT, RCGX = milling inserts → category=milling_insert\nCNMG, TNMG, DCMT = turning inserts → category=turning_insert\nCP, CPD, TP prefix = threading inserts → category=threading_insert\nSD, MDN, MEGA prefix = drills/end mills\nGrades: T400D, TP2500, TP1500, MF5 = SECO\n\n=== BIG DAISHOWA SPECIFIC ===\nCN prefix inserts (e.g. CN0906) used in face mill bodies → categoryConfidence=uncertain (could be milling or turning)\nBN prefix = ball nose inserts\nGrade ACM250F, ACM300 = BIG Daishowa\n\n=== CATEGORY RULES ===\nDRILL INSERT: ICP, ICM, HCP, IDI, Gühring 4112/4115/4229. Always have cutting diameter. Go into drill body.\nMILLING INSERT: Face/shoulder/slot mill inserts. SPGX, RPHT, APKT, SEHT, OFMT, XOEX, RDMT, RCMT. Round/square/octagonal.\nTURNING INSERT: Lathe/boring bar inserts. CNMG, TNMG, DCMT, VCMT, CCMT, VNMG, WNMG, DNMG, SNMG. Triangle/diamond/rhombic.\nTHREADING INSERT: Inserts for cutting threads on lathe or mill. ISCAR MT/MultiMT/Tang-Grip/TT, SECO CP/CPD/TP series, Sandvik CoroThread, Kennametal Top Notch. Label shows thread pitch (e.g. 16UN, 8UN, 1.5ISO, 2.0ISO) or standard (UN, ISO, BSP, NPT). → category=threading_insert\nTAP: ONLY if thread designation shown e.g. M6x1.0, M10x1.5, UNC, UNF, BSP, BSPT, NPT. Never confuse with end mills.\nEND MILL: Solid carbide, has flutes. Gühring 5735/5516/5525/5537/3560, SL-RATIOFRAESER, slot drills, ball nose, corner radius mills. 2-flute slot drills = end_mill. ALWAYS set endMillType: flat end = square | small corner rad = corner-radius | hemispherical tip = ball-nose. DHF DBK/DBO = ball-nose.\nOTHER: reamers, boring bars, indexable drills (not insert), anything else.\n\n=== ISO CORNER RADIUS ===\nISO code last 2 digits = corner radius x 0.1mm: 02=R0.2, 04=R0.4, 08=R0.8, 12=R1.2, 16=R1.6\nGühring end mills: read corner radius from label (R-RF1 = sharp corner/no radius)\n\nBe exact with part numbers and diameters. Use web knowledge for unknown brands.`}
       ]}]})
     });
     clearInterval(ticker);
@@ -1283,7 +1287,7 @@ If the label shows a barcode with a numeric EAN (e.g. 303617274), put it in the 
     let p;try{const c=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();p=JSON.parse((c.match(/\{[\s\S]*\}/)||[c])[0]);}
     catch{p={category:'other',brand:'',partNumber:'',diameter:'',shape:'',grade:'',notes:'',qty:1,confidence:'low'};}
 
-    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',tap:'taps',end_mill:'endmill',other:'other'};
+    const catMap={drill_insert:'drill',milling_insert:'milling',turning_insert:'turning',threading_insert:'threading',tap:'taps',end_mill:'endmill',other:'other'};
     currentCat=catMap[p.category]||'other';
     renderCatTags();renderCatFields();
 
@@ -2090,14 +2094,24 @@ const APP_VERSION = '3.25';
  *  - Threshold logic: /10 if ≤80mm, /100 if >80mm
  *  - All tested series now match correctly
  *
- *  v3.26 (current)
+ *  v3.28 (current)
  *  ─────────────────────────────────────────────────────
- *  - Fix: storage unit edit ✏️ and delete ✕ buttons now
- *    visible in Storage tab — id mismatch between
- *    storageUnitChips div and renderStorageUnitChips()
- *    meant chips never rendered
+ *  - Added threading category (🔵) for threading inserts
+ *    (ISCAR MT/MultiMT, SECO CP/CPD, Sandvik CoroThread)
+ *  - Scan prompt: threading_insert added as a category
+ *    with full rules — MT/MultiMT/Tang-Grip → threading,
+ *    CP/CPD/TP → threading. Distinguishes from taps.
+ *  - Category confirm modal: threading button added
  *
- *  v3.22
+ *  v3.27 (current)
+ *  - Material suitability chips expanded: added all
+ *    Gühring RF 100 end mill series (5735/5582/6761/5584
+ *    3562/3676/3649/3675/3472/3473/3793/6478/6737 etc)
+ *    and SECO JABRO (JSE514/JS554/HK) — now covers all
+ *    213 records in the toolstore
+ *
+ *  v3.22 (current)
+ *  ─────────────────────────────────────────────────────
  *  - Tool detail modal: material suitability chips now
  *    shown for all known Gühring/ISCAR series — colour
  *    coded P/M/K/N/S/H blocks, filled = optimal, outline
@@ -2789,6 +2803,44 @@ function openDetail(id) {
     '5537':{'P':'●','M':'●','K':'●','N':'●','S':'','H':''},
     '6537':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
     '6408':{'P':'●','M':'●','K':'●','N':'○','S':'','H':''},
+    // Gühring RF 100 U end mills (steel & cast iron)
+    '5735':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '5535':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '5582':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3114':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    // Gühring RF 100 Speed (steel, general purpose)
+    '6761':{'P':'●','M':'○','K':'●','N':'○','S':'','H':''},
+    '6765':{'P':'●','M':'○','K':'●','N':'○','S':'','H':''},
+    // Gühring RF 100 VA ball nose (steel & stainless)
+    '5584':{'P':'●','M':'●','K':'○','N':'','S':'','H':''},
+    '3043':{'P':'●','M':'●','K':'○','N':'','S':'','H':''},
+    // Gühring RF 100 general solid carbide end mills
+    '3562':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3872':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3676':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3649':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3675':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3679':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3472':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3473':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3793':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3803':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '5556':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '5743':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '6478':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '6737':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '6793':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '6819':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '6984':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '8978':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '19978':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3358':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    '3574':{'P':'●','M':'○','K':'○','N':'','S':'','H':''},
+    '3674':{'P':'●','M':'○','K':'●','N':'','S':'','H':''},
+    // SECO JABRO end mills
+    'JSE514':{'P':'●','M':'●','K':'●','N':'○','S':'','H':''},
+    'JS554': {'P':'●','M':'●','K':'●','N':'○','S':'','H':''},
+    'HK':    {'P':'●','M':'○','K':'●','N':'','S':'','H':''},
     // Taps
     '4218':{'P':'●','M':'●','K':'○','N':'○','S':'○','H':''},
     '393': {'P':'●','M':'●','K':'○','N':'○','S':'○','H':''},
