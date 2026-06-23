@@ -421,7 +421,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.94);backdrop-
     <select class="storage-select" id="storageUnitSelect" onchange="renderStorageView()" style="flex:1"></select>
     <button onclick="openAddStorageModal()" style="flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--text);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700">➕ Unit</button>
   </div>
-  <div id="storageUnitListInline" style="margin-bottom:8px"></div>
+  <div id="storageUnitChips" style="margin-bottom:8px"></div>
   <div id="storageView"></div>
 </div>
 
@@ -2090,8 +2090,14 @@ const APP_VERSION = '3.25';
  *  - Threshold logic: /10 if ≤80mm, /100 if >80mm
  *  - All tested series now match correctly
  *
- *  v3.22 (current)
+ *  v3.26 (current)
  *  ─────────────────────────────────────────────────────
+ *  - Fix: storage unit edit ✏️ and delete ✕ buttons now
+ *    visible in Storage tab — id mismatch between
+ *    storageUnitChips div and renderStorageUnitChips()
+ *    meant chips never rendered
+ *
+ *  v3.22
  *  - Tool detail modal: material suitability chips now
  *    shown for all known Gühring/ISCAR series — colour
  *    coded P/M/K/N/S/H blocks, filled = optimal, outline
