@@ -2131,7 +2131,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.32';
+const APP_VERSION = '3.33';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -2975,8 +2975,11 @@ function openDetail(id) {
       ${row('Location', ls || '—', 'var(--accent2)')}
       ${row('Size / Ø', t.diameter)}
       ${row('Description', t.description)}
-      ${row('Shape', t.shape)}
-      ${row('Corner Radius', t.cornerRadius)}
+      ${row('Shape', t.shape || t.extra?.fShape)}
+      ${row('Corner Radius', t.cornerRadius || t.extra?.fCornerRadius || t.extra?.fCorner)}
+      ${row('Flutes', t.extra?.fFlutes)}
+      ${row('OAL Length', t.extra?.fLength && !/flute/i.test(t.extra.fLength) ? t.extra.fLength : '')}
+      ${row('End Mill Type', t.endMillType || t.extra?.fEndMillType)}
       ${row('Material', t.material)}
       ${row('Grade / Coating', t.grade)}
       ${row('Coolant Through', t.coolantThrough)}
@@ -2991,6 +2994,11 @@ function openDetail(id) {
       ${row('Added', t.addedAt ? new Date(t.addedAt).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}) : '—')}
       ${verifiedDate ? row('AI Verified', verifiedDate, 'var(--green)') : ''}
     </div>
+    ${auditResults&&auditResults[id]?`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px">🔍 AI Catalogue Verification</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.6;font-family:'DM Mono',monospace;white-space:pre-wrap">${auditResults[id]}</div>
+    </div>`:''}
   `;
 
   document.getElementById('detailBody').innerHTML = html;
