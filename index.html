@@ -1479,16 +1479,8 @@ function findAndShowMatches(p){
     // Diameter
     if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.1)score+=30;
     else if(dm&&tdm&&Math.abs(parseFloat(dm)-parseFloat(tdm))<0.5)score+=10;
-    // Grade — mismatch on exact PN is a hard disqualifier (e.g. Sumitomo AC630M vs AC820P)
-    const normGrade=s=>(s||'').toLowerCase().replace(/[\s-]/g,'');
-    const scannedGrade=normGrade(p.grade);
-    const toolGradeVal=normGrade(t.grade);
-    if(scannedGrade&&toolGradeVal){
-      if(scannedGrade===toolGradeVal) score+=15;
-      else if(exactPNMatch) score-=120;
-    } else if(scannedGrade&&!toolGradeVal){
-      score+=5;
-    }
+    // Grade
+    if(p.grade&&t.grade&&t.grade.toLowerCase()===p.grade.toLowerCase())score+=15;
     return{tool:t,score};
   }).filter(x=>x.score>=20).sort((a,b)=>b.score-a.score).slice(0,5);
 
@@ -1579,11 +1571,11 @@ function submitTool(){
     const bcVsPn=bc&&tpn&&tpn===bc;
     if(!pnMatch&&!bcMatch&&!pnVsBc&&!bcVsPn) return false;
     if(brN&&tbrN&&!tbrN.includes(brN)&&!brN.includes(tbrN)) return false;
-    // Grade: if BOTH sides have a grade, they must match — differentiates e.g. Sumitomo AC630M vs AC820P
+    // Grade: if both sides have a grade and they differ, not a duplicate
     const normGr=s=>(s||'').toLowerCase().replace(/[\s-]/g,'');
-    const scanGrade=normGr(p.grade);
+    const formGrade=normGr(document.getElementById('fGrade')?.value||'');
     const toolGrade=normGr(t.grade);
-    if(scanGrade&&toolGrade&&scanGrade!==toolGrade) return false;
+    if(formGrade&&toolGrade&&formGrade!==toolGrade) return false;
     return true;
   });
   if(dup){
@@ -2150,7 +2142,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.42';
+const APP_VERSION = '3.43';
 
 /*
  * ════════════════════════════════════════════════════════
