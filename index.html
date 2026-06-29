@@ -1942,11 +1942,12 @@ function restoreFromJSON(){
       notes: (r['Notes']||'').trim(),
       added: r['Added']||new Date().toISOString(),
     })) : parsed;
-    // Merge — avoid duplicates by partNumber
-    const existingPNs=new Set(tools.map(t=>(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'')));
+    // Merge — avoid duplicates by partNumber+grade (grade differentiates e.g. same Sumitomo ISO code in different grades)
+    const existingKeys=new Set(tools.map(t=>((t.partNumber||'').toLowerCase().replace(/[\s-]/g,'')+'::'+(t.grade||'').toLowerCase().replace(/[\s-]/g,''))));
     const newItems=mapped.filter(t=>{
       const pn=(t.partNumber||'').toLowerCase().replace(/[\s-]/g,'');
-      return pn && !existingPNs.has(pn);
+      const key=pn+'::'+(t.grade||'').toLowerCase().replace(/[\s-]/g,'');
+      return pn && !existingKeys.has(key);
     });
     tools=[...tools,...newItems];
     save('ts_tools',tools);
@@ -2131,7 +2132,7 @@ function isLocationTaken(storageId, bin, section, excludeId=null){
 
 // ── AUTO UPDATE ───────────────────────────────────────────────────────────────
 const UPDATE_URL = 'https://raw.githubusercontent.com/Tommyheyns/toolstore/main/index.html';
-const APP_VERSION = '3.38';
+const APP_VERSION = '3.39';
 
 /*
  * ════════════════════════════════════════════════════════
@@ -3678,8 +3679,9 @@ function previewImport(){
     const mapped = mapRow(row);
     if(!mapped.pn){ skipped++; continue; }
     
-    // Find existing tool by part number
-    const existing = tools.find(t => normPn(t.partNumber) === normPn(mapped.pn));
+    // Find existing tool by partNumber+grade (grade differentiates same ISO code in different grades e.g. Sumitomo AC630M vs AC820P)
+    const normGr = s => (s||'').toLowerCase().replace(/[\s-]/g,'');
+    const existing = tools.find(t => normPn(t.partNumber) === normPn(mapped.pn) && normGr(t.grade) === normGr(mapped.grade));
     
     if(existing){
       // Work out what would change (never touch qty or storage)
